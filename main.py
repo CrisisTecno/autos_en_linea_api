@@ -20,7 +20,7 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Credentials', 'true')
     return response
 
-@app.route('/')
+@app.route('/init')
 def welcome():
     return '''
         <div style="text-align: center; margin-top: 25vh;">
