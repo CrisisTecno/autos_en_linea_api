@@ -27,9 +27,9 @@ def welcome():
             <h1>BIENVENIDOS A LA API DE AUTOS EN LINEA</h1>
             <h3 style="color: dimgray;">ACTUALMENTE SE TIENEN LAS SIGUIENTES ENDPOINTS DISPONIBLES:</h3>
             <ul style="list-style: none;">
-                <li>GET: /catalogo</li>
-                <li>GET: /distribuidor</li>
-                <li>GET: /sucursal</li>
+                <li><a href="/catalogo">GET: /catalogo</a></li>
+                <li><a href="/distribuidor">GET: /distribuidor</a></li>
+                <li><a href="/sucursal">GET: /sucursal</a></li>
             </ul>
             <h3 style="color: dimgray;">LAS MISMAS BAJO LOS MODELOS ENVIADOS</h3>
         </div>
