@@ -20,7 +20,20 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Credentials', 'true')
     return response
 
-
+@app.route('/')
+def welcome():
+    return '''
+        <div style="text-align: center; margin-top: 25vh;">
+            <h1>BIENVENIDOS A LA API DE AUTOS EN LINEA</h1>
+            <h3 style="color: dimgray;">ACTUALMENTE SE TIENEN LAS SIGUIENTES ENDPOINTS DISPONIBLES:</h3>
+            <ul style="list-style: none;">
+                <li>GET: /catalogo</li>
+                <li>GET: /distribuidor</li>
+                <li>GET: /sucursal</li>
+            </ul>
+            <h3 style="color: dimgray;">LAS MISMAS BAJO LOS MODELOS ENVIADOS</h3>
+        </div>
+    '''
 
 app.register_blueprint(catalogo_fl, url_prefix='/catalogo')
 app.register_blueprint(distribuidor_fl, url_prefix='/distribuidor')
