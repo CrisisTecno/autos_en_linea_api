@@ -1,10 +1,11 @@
 from flask import Blueprint, render_template
 from config.database import connect_to_database
 from flask import Flask, Response, jsonify, request
-from api.sucursal.id import get_sucursal
+from .distribuidor_id import distribuidor_fl1
+# from api.sucursal.sucursal_id import get_sucursal_for_distribuidor
 
 distribuidor_fl = Blueprint('distribuidor', __name__)
-
+distribuidor_fl.register_blueprint(distribuidor_fl1,)
 async def process_distribuidor(connection):
     try:
         async with connection.cursor() as cursor:
@@ -37,11 +38,11 @@ async def process_distribuidor(connection):
 
     
 @distribuidor_fl.route('/', methods=['GET'])
-async def get_pedidos_proveedor():
+async def get_distribuidor():
     async with connect_to_database() as connection:
         try:
             # Obtener información de los pedidos del proveedor
-            usuarios = await process_distribuidor(connection)
-            return jsonify({"success": True, "data": usuarios})
+            distribuidor = await process_distribuidor(connection)
+            return jsonify({"success": True, "data": distribuidor})
         except Exception as e:
             return jsonify({"error": "Database error: {}".format(e)}), 500

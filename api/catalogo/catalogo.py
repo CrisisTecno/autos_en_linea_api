@@ -1,8 +1,11 @@
 from flask import Blueprint, render_template
 from config.database import connect_to_database
 from flask import Flask, Response, jsonify, request
+from .catalgo_id import catalogo_fl1
+from api.catalogo.funtions.gets import get_auto,get_sucursal
 
 catalogo_fl = Blueprint('catalogo', __name__)
+catalogo_fl.register_blueprint(catalogo_fl1,)
 
 async def process_catalogo_with_sucursal(connection):
     try:
@@ -28,32 +31,7 @@ async def process_catalogo_with_sucursal(connection):
     finally:
         connection.close()
 
-async def get_sucursal(connection, sucursal_id):
-    try:
-        async with connection.cursor() as cursor:
-            # Obtener información de la sucursal
-            sql_sucursal = """SELECT nombre FROM sucursal WHERE id_sucursal = %s"""
-            await cursor.execute(sql_sucursal, (sucursal_id,))
-            sucursal_info = await cursor.fetchone()
 
-            return sucursal_info
-    except Exception as e:
-        print(f"Error obtaining sucursal info for ID {sucursal_id}: {e}")
-        return None
-
-async def get_auto(connection, auto_id):
-    try:
-        async with connection.cursor() as cursor:
-            # Obtener información de la sucursal
-            sql_auto = """SELECT marca, modelo,categoria_de_auto,anio,precio,kilometraje FROM auto WHERE id_auto = %s"""
-            await cursor.execute(sql_auto, (auto_id,))
-            sucursal_info = await cursor.fetchone()
-
-            return sucursal_info
-    except Exception as e:
-        print(f"Error obtaining sucursal info for ID {auto_id}: {e}")
-        return None
- 
 
 
     

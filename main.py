@@ -4,6 +4,8 @@ from config.database import connect_to_database
 from api.catalogo.catalogo import catalogo_fl
 from api.distribuidor.distribuidor import distribuidor_fl
 from api.sucursal.sucursal import sucursal_fl
+from api.usuario.usuario import usuario_fl
+from api.auto.auto import auto_fl
 import asyncio
 
 app = Flask(__name__)
@@ -23,21 +25,55 @@ def after_request(response):
 @app.route('/init')
 def welcome():
     return '''
-        <div style="text-align: center; margin-top: 25vh;">
+        <div style="text-align: center; margin-top:5vh">
             <h1>BIENVENIDOS A LA API DE AUTOS EN LINEA</h1>
             <h3 style="color: dimgray;">ACTUALMENTE SE TIENEN LAS SIGUIENTES ENDPOINTS DISPONIBLES:</h3>
             <ul style="list-style: none;">
-                <li><a href="/catalogo">GET: /catalogo</a></li>
-                <li><a href="/distribuidor">GET: /distribuidor</a></li>
-                <li><a href="/sucursal">GET: /sucursal</a></li>
+                <li><a href="/catalogos">GET: /catalogos</a></li>
+                <ul>
+                    <li><a href="/catalogos/1">GET: /catalogos/id</a></li>
+                </ul>
+                <li><a href="/distribuidores">GET: /distribuidores</a></li>
+                <ul>
+                    <li><a href="/distribuidores/101">GET: /distribuidores/id</a></li>
+                </ul>
+                <li><a href="/sucursales">GET: /sucursales</a></li>
+                <ul>
+                    <li><a href="/sucursales/1">GET: /sucursales/id</a></li>
+                </ul>
+                <li><a href="/usuarios">GET: /usuarios</a></li>
+                <ul>
+                    <li><a href="/usuarios/102">GET: /usuarios/id</a></li>
+                    <li><a href="#">POST: /usuarios/usuario</a></li>
+                    <div>       <br>BODY PARA USUARIO:   </br>  {
+                "id_usuario":INT,
+                "contrasena": str,
+                "rol": str,
+                "nombres": str,
+                "apellidos": str,
+                "correo_electronico": str,
+                "contacto": str,
+                "direccion": str,
+                "num_telefono": str,
+                "url_logo":str
+            }
+</div>
+<br>  </br> 
+                </ul>
+                <li><a href="/autos">GET: /autos</a></li>
+                <ul>
+                    <li><a href="/autos/2">GET: /autos/id</a></li>
+                </ul>
             </ul>
             <h3 style="color: dimgray;">LAS MISMAS BAJO LOS MODELOS ENVIADOS</h3>
         </div>
     '''
 
-app.register_blueprint(catalogo_fl, url_prefix='/catalogo')
-app.register_blueprint(distribuidor_fl, url_prefix='/distribuidor')
-app.register_blueprint(sucursal_fl, url_prefix='/sucursal')
+app.register_blueprint(catalogo_fl, url_prefix='/catalogos')
+app.register_blueprint(distribuidor_fl, url_prefix='/distribuidores')
+app.register_blueprint(sucursal_fl, url_prefix='/sucursales')
+app.register_blueprint(usuario_fl, url_prefix='/usuarios')
+app.register_blueprint(auto_fl, url_prefix='/autos')
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=True)

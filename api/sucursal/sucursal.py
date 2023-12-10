@@ -1,11 +1,11 @@
 from flask import Blueprint, render_template
 from config.database import connect_to_database
 from flask import Flask, Response, jsonify, request
-
-
+from .sucursal_id import sucursal_fl1
 sucursal_fl = Blueprint('sucursal', __name__)
 
 
+sucursal_fl.register_blueprint(sucursal_fl1,)
 async def process_sucursal(connection):
     try:
         async with connection.cursor() as cursor:
@@ -48,11 +48,11 @@ async def process_sucursal(connection):
 
     
 @sucursal_fl.route('/', methods=['GET'])
-async def get_pedidos_proveedor():
+async def get_sucursal_all():
     async with connect_to_database() as connection:
         try:
             # Obtener información de los pedidos del proveedor
-            usuarios = await process_sucursal(connection)
-            return jsonify({"success": True, "data": usuarios})
+            sucursales = await process_sucursal(connection)
+            return jsonify({"success": True, "data": sucursales})
         except Exception as e:
             return jsonify({"error": "Database error: {}".format(e)}), 500
