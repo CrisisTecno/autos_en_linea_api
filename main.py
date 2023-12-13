@@ -22,6 +22,9 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Credentials', 'true')
     return response
 
+@app.route('/')
+def root():
+    return '<h1>API DE AUTOS EN LINEA</h1>'
 @app.route('/init')
 def welcome():
     return '''

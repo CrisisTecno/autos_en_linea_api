@@ -2,12 +2,15 @@ from flask import Blueprint, render_template
 from config.database import connect_to_database
 from flask import Flask, Response, jsonify, request
 from .sucursal_id import sucursal_fl1
-from .sucursal_post import sucursal_fl2
+from .sucursal_methods import sucursal_fl2
+from .images_sucursal import images_sucursal_fl2
 sucursal_fl = Blueprint('sucursal', __name__)
 
 
-sucursal_fl.register_blueprint(sucursal_fl1,)
-sucursal_fl.register_blueprint(sucursal_fl2,)
+sucursal_fl.register_blueprint(sucursal_fl1)
+sucursal_fl.register_blueprint(sucursal_fl2)
+sucursal_fl.register_blueprint(images_sucursal_fl2)
+
 async def process_sucursal(connection):
     try:
         async with connection.cursor() as cursor:

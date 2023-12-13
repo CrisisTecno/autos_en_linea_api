@@ -1,8 +1,10 @@
+
+
+-- usuario tiene la id creada en firebase
 CREATE TABLE usuario (
-    id_usuario INT AUTO_INCREMENT  PRIMARY KEY,
+    id_usuario INT AUTO_INCREMENT PRIMARY KEY,
     contrasena VARCHAR(255),
     rol VARCHAR(100),
-    
     id_sucursal INT,
     nombres VARCHAR(100),
     apellidos VARCHAR(100),
@@ -15,9 +17,10 @@ CREATE TABLE usuario (
     gerente VARCHAR(100),
     url_link_web VARCHAR(100)
 );
+-- el id de usuario en la tabla sucursal es inutil teniendo la tabla distribuidor sucursal
 CREATE TABLE sucursal (
-    id_sucursal INT PRIMARY KEY,
-    id_usuario INT,
+    id_sucursal INT AUTO_INCREMENT  PRIMARY KEY,
+    -- id_usuario INT,
     direccion VARCHAR(255),
     telefono VARCHAR(255),
     nombre VARCHAR(255),
@@ -29,11 +32,11 @@ CREATE TABLE sucursal (
     url_logo VARCHAR(255),
     coordenadas VARCHAR(255),
     horarios_de_atencion VARCHAR(255),
-    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
+    -- FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
 );
 
 CREATE TABLE distribuidor_sucursal (
-    id_relacion INT PRIMARY KEY,
+    id_relacion INT AUTO_INCREMENT  PRIMARY KEY,
     id_usuario INT,
     id_sucursal INT,
     FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario),
@@ -41,15 +44,15 @@ CREATE TABLE distribuidor_sucursal (
 );
 
 CREATE TABLE images_sucursal (
-    id_images_sucursal INT PRIMARY KEY,
+    id_images_sucursal INT AUTO_INCREMENT  PRIMARY KEY,
     url_image TEXT,
     descripcion TEXT,
     id_sucursal INT,
     FOREIGN KEY (id_sucursal) REFERENCES sucursal(id_sucursal)
 );
-
+-- mismo caso un auto no necesita de la id 
 CREATE TABLE auto (
-    id_auto INT PRIMARY KEY,
+    id_auto INT AUTO_INCREMENT  PRIMARY KEY,
     nombre VARCHAR(100),
     descripcion VARCHAR(255),
     disponibilidad BOOLEAN,
@@ -59,13 +62,20 @@ CREATE TABLE auto (
     anio INT,
     kilometraje VARCHAR(100),
     precio DECIMAL(10, 2),
-    sucursal_id INT,
+    -- sucursal_id INT,
     especificaciones TEXT,
-    FOREIGN KEY (sucursal_id) REFERENCES sucursal(id_sucursal)
+    -- FOREIGN KEY (sucursal_id) REFERENCES sucursal(id_sucursal)
+);
+CREATE TABLE auto_sucursal (
+    id_relacion INT AUTO_INCREMENT  PRIMARY KEY,
+    id_auto INT,
+    id_sucursal INT,
+    FOREIGN KEY (id_auto) REFERENCES auto(id_auto),
+    FOREIGN KEY (id_sucursal) REFERENCES sucursal(id_sucursal)
 );
 
 CREATE TABLE catalogo (
-    id_catalogo INT PRIMARY KEY,
+    id_catalogo INT AUTO_INCREMENT  PRIMARY KEY,
     sucursal_id INT,
     auto_id INT,
     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -78,7 +88,7 @@ CREATE TABLE catalogo (
 );
 
 CREATE TABLE images_catalogo (
-    id_images_catalogo INT PRIMARY KEY,
+    id_images_catalogo INT AUTO_INCREMENT  PRIMARY KEY,
     url_image TEXT,
     descripcion TEXT,
     id_catalogo INT,

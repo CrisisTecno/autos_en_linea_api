@@ -2,7 +2,7 @@ from flask import Blueprint, render_template
 from config.database import connect_to_database
 from flask import Flask, Response, jsonify, request
 from .usuario_id import usuario_fl1
-from .usuario_post import usuario_fl2
+from .usuario_methods import usuario_fl2
 
 usuario_fl = Blueprint('usuario', __name__)
 usuario_fl.register_blueprint(usuario_fl1,)

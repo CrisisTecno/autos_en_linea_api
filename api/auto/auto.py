@@ -2,7 +2,7 @@ from flask import Blueprint, render_template
 from config.database import connect_to_database
 from flask import Flask, Response, jsonify, request
 from .auto_id import auto_fl1
-from .auto_post import auto_fl2
+from .auto_methods import auto_fl2
 auto_fl = Blueprint('auto', __name__)
 
 auto_fl.register_blueprint(auto_fl1,)

@@ -2,10 +2,14 @@ from flask import Blueprint, render_template
 from config.database import connect_to_database
 from flask import Flask, Response, jsonify, request
 from .catalgo_id import catalogo_fl1
+from .catalogo_methods import catalogo_fl2
+from .images_catalogo import images_catalogo_fl2
 from api.catalogo.funtions.gets import get_auto,get_sucursal
 
 catalogo_fl = Blueprint('catalogo', __name__)
 catalogo_fl.register_blueprint(catalogo_fl1,)
+catalogo_fl.register_blueprint(catalogo_fl2)
+catalogo_fl.register_blueprint(images_catalogo_fl2)
 
 async def process_catalogo_with_sucursal(connection):
     try:
