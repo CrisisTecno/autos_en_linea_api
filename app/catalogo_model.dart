@@ -7,8 +7,6 @@ class Catalogo {
   // Sucursal
   String? sucursal;
   String? sucursal_id;
-
-  //auto O ARTICULO
   String? marca;
   String? modelo;
   String? categoria;
@@ -17,21 +15,19 @@ class Catalogo {
   String? kilometraje;
   DateTime? created;
   DateTime? lastUpdate;
-  //agregar raiting ******
-
-  //agregar::
   DateTime? lastInventoryUpdate;
-
-  //disponibilidad
   bool? enable;
-  Map? especificaciones;
-  
-  String? mainImage;
+ String? mainImage;
   String? descripcion;
   String? color;
+  
+  List? images;
+  Map? especificaciones;
+  
+ 
 
   //array de string con links
-  List? images;
+  
 
   Catalogo(
       {this.id,

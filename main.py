@@ -5,8 +5,8 @@ from api.catalogo.catalogo import catalogo_fl
 from api.distribuidor.distribuidor import distribuidor_fl
 from api.sucursal.sucursal import sucursal_fl
 from api.usuario.usuario import usuario_fl
-from api.auto.auto import auto_fl
-import asyncio
+from api.articulo.articulo import articulo_fl
+
 
 app = Flask(__name__)
 app.env = "development"
@@ -76,7 +76,7 @@ app.register_blueprint(catalogo_fl, url_prefix='/catalogos')
 app.register_blueprint(distribuidor_fl, url_prefix='/distribuidores')
 app.register_blueprint(sucursal_fl, url_prefix='/sucursales')
 app.register_blueprint(usuario_fl, url_prefix='/usuarios')
-app.register_blueprint(auto_fl, url_prefix='/autos')
+app.register_blueprint(articulo_fl, url_prefix='/autos')
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=True)
