@@ -134,3 +134,25 @@ async def obtener_autos_por_sucursal(id_sucursal):
 
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+
+
+
+@sucursal_fl2.route('/<int:id_sucursal>/usuarios', methods=['GET'])
+async def obtener_usuarios_por_sucursal(id_sucursal):
+    try:
+        async with connect_to_database() as connection:
+            async with connection.cursor() as cursor:
+                sql = """
+                    SELECT * FROM usuario
+                    WHERE id_sucursal = %s
+                """
+                await cursor.execute(sql, (id_sucursal,))
+                usuarios = await cursor.fetchall()
+
+                if not usuarios:
+                    return jsonify({"error": f"No se encontraron usuarios para la sucursal con ID {id_sucursal}"}), 404
+
+                return jsonify({"success": True, "usuarios": usuarios}), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Error en la base de datos: {e}"}), 500

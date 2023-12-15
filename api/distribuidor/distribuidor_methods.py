@@ -92,3 +92,70 @@ async def eliminar_distribuidor(id_distribuidor):
 
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+    
+@distribuidor_fl2.route('/<int:id_distribuidor>/usuarios', methods=['GET'])
+async def obtener_usuarios_por_distribuidor(id_distribuidor):
+    try:
+        async with connect_to_database() as connection:
+            async with connection.cursor() as cursor:
+              
+                sql = """
+                    SELECT * FROM usuario
+                    WHERE id_distribuidor = %s
+                """
+                await cursor.execute(sql, (id_distribuidor,))
+                usuarios = await cursor.fetchall()
+
+                if not usuarios:
+                    return jsonify({"error": f"No se encontraron usuarios para el distribuidor con ID {id_distribuidor}"}), 404
+
+                return jsonify({"success": True, "usuarios": usuarios}), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+
+
+@distribuidor_fl2.route('/<int:id_distribuidor>/articulos', methods=['GET'])
+async def obtener_articulos_por_distribuidor(id_distribuidor):
+    try:
+        async with connect_to_database() as connection:
+            async with connection.cursor() as cursor:
+                sql = """
+                    SELECT articulo.* FROM articulo
+                    JOIN articulo_sucursal ON articulo.id_articulo = articulo_sucursal.id_articulo
+                    JOIN distribuidor_sucursal ON articulo_sucursal.id_sucursal = distribuidor_sucursal.id_sucursal
+                    WHERE distribuidor_sucursal.id_distribuidor = %s
+                """
+                await cursor.execute(sql, (id_distribuidor,))
+                articulos = await cursor.fetchall()
+
+                if not articulos:
+                    return jsonify({"error": f"No se encontraron artículos para el distribuidor con ID {id_distribuidor}"}), 404
+
+                return jsonify({"success": True, "articulos": articulos}), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+
+
+
+@distribuidor_fl2.route('/<int:id_distribuidor>/sucursales', methods=['GET'])
+async def obtener_sucursales_por_distribuidor(id_distribuidor):
+    try:
+        async with connect_to_database() as connection:
+            async with connection.cursor() as cursor:
+                sql = """
+                    SELECT sucursal.* FROM sucursal
+                    JOIN distribuidor_sucursal ON sucursal.id_sucursal = distribuidor_sucursal.id_sucursal
+                    WHERE distribuidor_sucursal.id_distribuidor = %s
+                """
+                await cursor.execute(sql, (id_distribuidor,))
+                sucursales = await cursor.fetchall()
+
+                if not sucursales:
+                    return jsonify({"error": f"No se encontraron sucursales para el distribuidor con ID {id_distribuidor}"}), 404
+
+                return jsonify({"success": True, "sucursales": sucursales}), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Error en la base de datos: {e}"}), 500

@@ -1,4 +1,3 @@
-
 CREATE TABLE sucursal (
     id_sucursal INT AUTO_INCREMENT  PRIMARY KEY,
     direccion VARCHAR(255),
@@ -28,6 +27,7 @@ CREATE TABLE distribuidor (
     email VARCHAR(255),
     horarioAtencion VARCHAR(255)
 );
+
 CREATE TABLE distribuidor_sucursal (
     id_relacion INT AUTO_INCREMENT  PRIMARY KEY,
     id_distribuidor INT,

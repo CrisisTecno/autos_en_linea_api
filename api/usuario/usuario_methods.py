@@ -64,7 +64,7 @@ async def actualizar_usuario(id_usuario):
                 sql_update = sql_update.rstrip(', ')
                 sql_update += " WHERE id_usuario = %s"
                 valores.append(id_usuario)
-
+                
                 await cursor.execute(sql_update, valores)
                 await connection.commit()
 
@@ -109,4 +109,26 @@ async def usuario_existe_por_telefono():
 
     except Exception as e:
         print(e)
+        return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+
+
+@usuario_fl2.route('/<string:id_usuario>/favoritos', methods=['GET'])
+async def obtener_autos_favoritos_usuario(id_usuario): 
+    try:
+        async with connect_to_database() as connection:
+            async with connection.cursor() as cursor:
+                sql = """
+                    SELECT articulo.* FROM articulo
+                    JOIN favoritos ON articulo.id_articulo = favoritos.id_articulo
+                    WHERE favoritos.id_usuario = %s
+                """
+                await cursor.execute(sql, (id_usuario,))
+                autos_favoritos = await cursor.fetchall()
+
+                if not autos_favoritos:
+                    return jsonify({"error": f"No se encontraron autos favoritos para el usuario con ID {id_usuario}"}), 404
+
+                return jsonify({"success": True, "autos_favoritos": autos_favoritos}), 200
+
+    except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500

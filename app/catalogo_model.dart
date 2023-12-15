@@ -7,6 +7,7 @@ class Catalogo {
   // Sucursal
   String? sucursal;
   String? sucursal_id;
+  
   String? marca;
   String? modelo;
   String? categoria;
