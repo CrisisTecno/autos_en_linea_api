@@ -11,13 +11,7 @@ usuario_fl.register_blueprint(usuario_fl2,)
 async def process_usuario(connection):
     try:
         async with connection.cursor() as cursor:
-            # Obtener registros de la tabla catalogo
-            sql_sucursal = """SELECT id_usuario,
-              nombres, apellidos, direccion, gerente,url_logo,
-              url_link_web,direccion,
-              num_telefono,created,lastUpdate,
-              id_sucursal, correo_electronico,coordenadas
-                FROM usuario;"""
+            sql_sucursal = """SELECT * FROM usuario;"""
             await cursor.execute(sql_sucursal)
             usuario_results = await cursor.fetchall()
             
@@ -31,7 +25,6 @@ async def process_usuario(connection):
 async def get_pedidos_proveedor():
     async with connect_to_database() as connection:
         try:
-            # Obtener información de los pedidos del proveedor
             usuarios = await process_usuario(connection)
             return jsonify({"success": True, "data": usuarios})
         except Exception as e:

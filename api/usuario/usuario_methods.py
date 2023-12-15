@@ -9,45 +9,45 @@ async def crear_usuario():
     try:
         async with connect_to_database() as connection:
             data = request.json
-            campos_requeridos = ['id_usuario', 'contrasena', 'rol', 'nombres', 'apellidos', 'correo_electronico']
-            print(data)
+            campos_requeridos = ['id_usuario', 'rol', 'nombres', 'apellidos', 'correo_electronico', 'num_telefono']
+            
             if not all(campo in data for campo in campos_requeridos):
                 return jsonify({"error": "Faltan campos requeridos"}), 400
                 
             async with connection.cursor() as cursor:
                 sql = """INSERT INTO usuario (
-                             id_usuario, contrasena, rol, nombres, apellidos, 
-                             correo_electronico, contacto, direccion, 
-                             num_telefono, url_logo, created, lastUpdate
+                             id_usuario, rol, nombres, apellidos, 
+                             correo_electronico, num_telefono, url_logo, 
+                             coordenadas, id_sucursal, id_distribuidor, created, lastUpdate
                          ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"""
-                valores=(
+                valores = (
                     data['id_usuario'],
-                    data['contrasena'],
                     data['rol'],
                     data['nombres'],
                     data['apellidos'],
                     data['correo_electronico'],
-                    data.get('contacto', ''),
-                    data.get('direccion', ''),
-                    data.get('num_telefono', ''),
-                    data.get('url_logo', '')
+                    data['num_telefono'],
+                    data.get('url_logo', ''),
+                    data.get('coordenadas', ''),
+                    data.get('id_sucursal'),
+                    data.get('id_distribuidor')
                 )
                 await cursor.execute(sql, valores)
-                connection.commit()
+                await connection.commit()
 
             return jsonify({"success": True, "message": "Usuario creado exitosamente"}), 201
 
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+    
 
-
-@usuario_fl2.route('/usuario/<int:id_usuario>', methods=['PUT'])
+@usuario_fl2.route('/usuario/<string:id_usuario>', methods=['PUT'])
 async def actualizar_usuario(id_usuario):
     try:
         async with connect_to_database() as connection:
             data = request.json
-            campos_permitidos = ['contrasena', 'rol', 'nombres', 'apellidos', 'correo_electronico',
-                                 'contacto', 'direccion', 'num_telefono', 'url_logo']
+            campos_permitidos = ['rol', 'nombres', 'apellidos', 'correo_electronico',
+                                 'num_telefono', 'url_logo', 'coordenadas', 'id_sucursal', 'id_distribuidor']
             
             if not any(campo in data for campo in campos_permitidos):
                 return jsonify({"error": "Se requiere al menos un campo para actualizar"}), 400
@@ -62,7 +62,6 @@ async def actualizar_usuario(id_usuario):
                         valores.append(data[campo])
 
                 sql_update = sql_update.rstrip(', ')
-
                 sql_update += " WHERE id_usuario = %s"
                 valores.append(id_usuario)
 
@@ -73,9 +72,9 @@ async def actualizar_usuario(id_usuario):
 
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+    
 
-
-@usuario_fl2.route('/usuario/<int:id_usuario>', methods=['DELETE'])
+@usuario_fl2.route('/usuario/<string:id_usuario>', methods=['DELETE'])
 async def eliminar_usuario(id_usuario):
     try:
         async with connect_to_database() as connection:
@@ -87,4 +86,27 @@ async def eliminar_usuario(id_usuario):
             return jsonify({"success": True, "message": f"Usuario con ID {id_usuario} eliminado exitosamente"}), 200
 
     except Exception as e:
+        return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+
+
+@usuario_fl2.route('/usuario_existe', methods=['GET'])
+async def usuario_existe_por_telefono():
+    num_telefono = request.args.get('num_telefono')
+    if not num_telefono:
+        return jsonify({"error": "Número de teléfono requerido"}), 400
+
+    try:
+        async with connect_to_database() as connection:
+            async with connection.cursor() as cursor:
+                print(num_telefono)
+                sql = "SELECT COUNT(*) FROM usuario WHERE num_telefono = %s"
+                await cursor.execute(sql, (num_telefono,))
+                result = await cursor.fetchone()
+             
+                existe = result['COUNT(*)'] > 0
+
+            return jsonify({"existe": existe}), 200
+
+    except Exception as e:
+        print(e)
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500

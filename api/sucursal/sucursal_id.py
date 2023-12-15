@@ -50,12 +50,36 @@ async def get_sucursal_detail(connection, id_sucursal):
     finally:
         connection.close()
 
+async def process_sucursal_por_id(connection, id_sucursal):
+    try:
+        async with connection.cursor() as cursor:
+            sql_sucursal = "SELECT * FROM sucursal WHERE id_sucursal = %s;"
+            await cursor.execute(sql_sucursal, (id_sucursal,))
+            sucursal_record = await cursor.fetchone()
+
+            if sucursal_record:
+                sql_sucursales_imagenes = "SELECT * FROM images_sucursal WHERE id_sucursal = %s;"
+                await cursor.execute(sql_sucursales_imagenes, (id_sucursal,))
+                sucursal_images = await cursor.fetchall()
+                sucursal_record['sucursal_images'] = sucursal_images
+
+                sql_articulos = """SELECT articulo.* FROM articulo
+                                   JOIN articulo_sucursal ON articulo.id_articulo = articulo_sucursal.id_articulo
+                                   WHERE articulo_sucursal.id_sucursal = %s;"""
+                await cursor.execute(sql_articulos, (id_sucursal,))
+                articulos_list = await cursor.fetchall()
+                sucursal_record['sucursal_articulos'] = articulos_list
+
+            return sucursal_record
+    finally:
+        connection.close()
+
 
 @sucursal_fl1.route('/<int:sucursal_id>', methods=['GET'])
 async def get_sucursal_by_id(sucursal_id):
     async with connect_to_database() as con:
         try:
-            sucursal_info = await get_sucursal_detail(con, sucursal_id)
+            sucursal_info = await process_sucursal_por_id(con, sucursal_id)
             if sucursal_info:
                 return jsonify({"success": True, "data": sucursal_info})
             else:

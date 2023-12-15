@@ -73,10 +73,11 @@ def welcome():
     '''
 
 app.register_blueprint(catalogo_fl, url_prefix='/catalogos')
+
 app.register_blueprint(distribuidor_fl, url_prefix='/distribuidores')
 app.register_blueprint(sucursal_fl, url_prefix='/sucursales')
 app.register_blueprint(usuario_fl, url_prefix='/usuarios')
-app.register_blueprint(articulo_fl, url_prefix='/autos')
+app.register_blueprint(articulo_fl, url_prefix='/articulos')
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=True)

@@ -17,7 +17,7 @@ async def get_usuario(connection, usuario_id):
         print(f"Error obtaining sucursal info for ID {usuario_id}: {e}")
         return None
     
-@usuario_fl1.route('/<int:usuario_id>', methods=['GET'])
+@usuario_fl1.route('/<string:usuario_id>', methods=['GET'])
 async def get_usuario_by_id(usuario_id):
     async with connect_to_database() as con:
         try:

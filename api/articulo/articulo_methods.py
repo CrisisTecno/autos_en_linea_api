@@ -9,37 +9,33 @@ async def crear_articulo():
     try:
         async with connect_to_database() as connection:
             data = request.json
-            campos_requeridos = ['anio',
-                                  'categoria', 'descripcion', 'enable',
-                                    'marca','modelo''precio']
-      
+            campos_requeridos = ['marca', 'modelo', 'categoria', 'ano', 
+                                 'precio', 'kilometraje', 'descripcion', 'enable', 'color']
+
             if not all(campo in data for campo in campos_requeridos):
                 return jsonify({"error": "Faltan campos requeridos"}), 400
-                
+
             async with connection.cursor() as cursor:
                 sql = """INSERT INTO articulo (
-                             nombre, descripcion, disponibilidad, categoria_de_articulo, 
-                             marca, modelo, anio, kilometraje,precio,especificaciones
-                         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s)"""
-                valores=(
-                   
-                    data['nombre'],
-                    data['descripcion'],
-                    data['disponibilidad'],
-                    data['categoria_de_articulo'],
+                             marca, modelo, categoria, ano, precio, 
+                             kilometraje, descripcion, enable, color
+                         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+                valores = (
                     data['marca'],
                     data['modelo'],
-                    data['anio'],
-                    data['kilometraje'],
+                    data['categoria'],
+                    data['ano'],
                     data['precio'],
-                    data['especificaciones']
+                    data['kilometraje'],
+                    data['descripcion'],
+                    data['enable'],
+                    data['color']
                 )
                 await cursor.execute(sql, valores)
                 await connection.commit()
                 rows_affected = cursor.rowcount
-                print(rows_affected)
 
-            return jsonify({"success": True, "message": "articulo creado exitosamente"}), 201
+            return jsonify({"success": True, "message": "Artículo creado exitosamente"}), 201
 
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
@@ -49,12 +45,12 @@ async def actualizar_articulo(id_articulo):
     try:
         async with connect_to_database() as connection:
             data = request.json
-            campos_permitidos = ['nombre', 'descripcion', 'disponibilidad', 'categoria_de_articulo',
-                                 'marca', 'modelo', 'anio', 'kilometraje', 'precio', 'especificaciones']
-            
+            campos_permitidos = ['marca', 'modelo', 'categoria', 'ano', 'precio', 
+                                 'kilometraje', 'descripcion', 'enable', 'color']
+
             if not any(campo in data for campo in campos_permitidos):
                 return jsonify({"error": "Se requiere al menos un campo para actualizar"}), 400
-                
+
             async with connection.cursor() as cursor:
                 sql_update = "UPDATE articulo SET "
                 valores = []
@@ -65,14 +61,13 @@ async def actualizar_articulo(id_articulo):
                         valores.append(data[campo])
 
                 sql_update = sql_update.rstrip(', ')
-
                 sql_update += " WHERE id_articulo = %s"
                 valores.append(id_articulo)
 
                 await cursor.execute(sql_update, valores)
                 await connection.commit()
 
-            return jsonify({"success": True, "message": f"articulo con ID {id_articulo} actualizado exitosamente"}), 200
+            return jsonify({"success": True, "message": f"Artículo con ID {id_articulo} actualizado exitosamente"}), 200
 
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500

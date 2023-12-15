@@ -1,3 +1,5 @@
+
+
 async def get_sucursal(connection, sucursal_id):
     try:
         async with connection.cursor() as cursor:

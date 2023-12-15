@@ -5,31 +5,24 @@ from flask import Flask, Response, jsonify, request
 distribuidor_fl1=Blueprint('distribuidor_id', __name__)
 
 
-async def get_distribuidor_detail(connection, id_usuario):
+async def process_distribuidor_por_id(connection, id_distribuidor):
     try:
         async with connection.cursor() as cursor:
-            sql_distribuidor = """SELECT id_usuario,
-                                  nombres, apellidos, direccion, gerente, url_logo, url_link_web, direccion,
-                                  num_telefono, created, lastUpdate,
-                                  id_sucursal, correo_electronico
-                               FROM usuario
-                               WHERE id_usuario = %s AND rol = 'Distribuidor';"""
-            await cursor.execute(sql_distribuidor, (id_usuario,))
-            distribuidor_info = await cursor.fetchone()
+            sql_distribuidor = "SELECT * FROM distribuidor WHERE id_distribuidor = %s"
+            await cursor.execute(sql_distribuidor, (id_distribuidor,))
+            distribuidor = await cursor.fetchone()
 
-            if distribuidor_info:
-                sql_sucursales = """SELECT sucursal.*
-                                    FROM sucursal
-                                    JOIN distribuidor_sucursal ON sucursal.id_sucursal = distribuidor_sucursal.id_sucursal
-                                    WHERE distribuidor_sucursal.id_usuario = %s"""
-                await cursor.execute(sql_sucursales, (id_usuario,))
-                sucursal_list = await cursor.fetchall()
-                distribuidor_info['sucursal_list'] = sucursal_list
+            if distribuidor:
+                sql_sucursales = """
+                    SELECT s.* FROM sucursal s
+                    JOIN distribuidor_sucursal ds ON s.id_sucursal = ds.id_sucursal
+                    WHERE ds.id_distribuidor = %s
+                """
+                await cursor.execute(sql_sucursales, (id_distribuidor,))
+                sucursales = await cursor.fetchall()
+                distribuidor['sucursales'] = sucursales
 
-            return distribuidor_info
-    except Exception as e:
-        print(f"Error obtaining detailed distribuidor info for ID {id_usuario}: {e}")
-        return None
+            return distribuidor
     finally:
         connection.close()
 
@@ -39,7 +32,7 @@ async def get_distribuidor_detail(connection, id_usuario):
 async def get_distribuidor_by_id(distribuidor_id):
     async with connect_to_database() as con:
         try:
-            distribuidor_by_id= await get_distribuidor_detail(con,distribuidor_id)
+            distribuidor_by_id= await process_distribuidor_por_id(con,distribuidor_id)
             if distribuidor_by_id:
                 return jsonify({"success": True, "data": distribuidor_by_id})
             else:
