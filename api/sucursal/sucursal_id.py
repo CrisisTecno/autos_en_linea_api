@@ -58,6 +58,10 @@ async def process_sucursal_por_id(connection, id_sucursal):
             sucursal_record = await cursor.fetchone()
 
             if sucursal_record:
+                for key in ['created', 'lastUpdate']:
+                    if sucursal_record[key]:
+                        sucursal_record[key] = int(sucursal_record[key].timestamp() * 1000)
+
                 sql_sucursales_imagenes = "SELECT * FROM images_sucursal WHERE id_sucursal = %s;"
                 await cursor.execute(sql_sucursales_imagenes, (id_sucursal,))
                 sucursal_images = await cursor.fetchall()
@@ -68,11 +72,18 @@ async def process_sucursal_por_id(connection, id_sucursal):
                                    WHERE articulo_sucursal.id_sucursal = %s;"""
                 await cursor.execute(sql_articulos, (id_sucursal,))
                 articulos_list = await cursor.fetchall()
+
+                for articulo in articulos_list:
+                    for key in ['created', 'lastUpdate', 'lastInventoryUpdate']:
+                        if articulo[key]:
+                            articulo[key] = int(articulo[key].timestamp() * 1000)
+
                 sucursal_record['sucursal_articulos'] = articulos_list
 
             return sucursal_record
     finally:
         connection.close()
+
 
 
 @sucursal_fl1.route('/<int:sucursal_id>', methods=['GET'])

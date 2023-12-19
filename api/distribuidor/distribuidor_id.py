@@ -11,8 +11,11 @@ async def process_distribuidor_por_id(connection, id_distribuidor):
             sql_distribuidor = "SELECT * FROM distribuidor WHERE id_distribuidor = %s"
             await cursor.execute(sql_distribuidor, (id_distribuidor,))
             distribuidor = await cursor.fetchone()
-
             if distribuidor:
+                for key in ['created', 'lastUpdate']:
+                    if distribuidor[key]:
+                        distribuidor[key] = int(distribuidor[key].timestamp() * 1000)
+
                 sql_sucursales = """
                     SELECT s.* FROM sucursal s
                     JOIN distribuidor_sucursal ds ON s.id_sucursal = ds.id_sucursal
@@ -20,11 +23,18 @@ async def process_distribuidor_por_id(connection, id_distribuidor):
                 """
                 await cursor.execute(sql_sucursales, (id_distribuidor,))
                 sucursales = await cursor.fetchall()
+
+                for sucursal in sucursales:
+                    for key in ['created', 'lastUpdate']:
+                        if sucursal[key]:
+                            sucursal[key] = int(sucursal[key].timestamp() * 1000)
+
                 distribuidor['sucursales'] = sucursales
 
             return distribuidor
     finally:
         connection.close()
+
 
 
     

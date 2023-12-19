@@ -9,10 +9,10 @@ async def get_articulo(connection, id_articulo):
         async with connection.cursor() as cursor:
             sql_articulo = """
                 SELECT a.*, 
-                       e.id_especificacion, e.tipo, e.nombre_especificacion, e.valor_especificacion,
+                       e.id_especificacion, e.tipo, 
                        img.url_image, img.descripcion as img_descripcion
                 FROM articulo a
-                LEFT JOIN especificaciones_articulo e ON a.id_articulo = e.id_articulo
+                LEFT JOIN especificaciones e ON a.id_articulo = e.id_articulo
                 LEFT JOIN images_articulo img ON a.id_articulo = img.id_articulo
                 WHERE a.id_articulo = %s
             """
@@ -30,9 +30,9 @@ async def get_articulo(connection, id_articulo):
                 'ano': raw_results[0]['ano'],
                 'precio': raw_results[0]['precio'],
                 'kilometraje': raw_results[0]['kilometraje'],
-                'created': raw_results[0]['created'],
-                'lastUpdate': raw_results[0]['lastUpdate'],
-                'lastInventoryUpdate': raw_results[0]['lastInventoryUpdate'],
+                'created': int(raw_results[0]['created'].timestamp() * 1000),
+                'lastUpdate': int(raw_results[0]['lastUpdate'].timestamp() * 1000),
+                'lastInventoryUpdate':int(raw_results[0]['lastInventoryUpdate'].timestamp() * 1000),
                 'enable': raw_results[0]['enable'],
                 'descripcion': raw_results[0]['descripcion'],
                 'enable': raw_results[0]['enable'],
@@ -40,16 +40,26 @@ async def get_articulo(connection, id_articulo):
                 'especificaciones': [],
                 'imagenes': []
             }
-
+            processed_especificaciones = set()
             for row in raw_results:
-                if row['id_especificacion'] and not any(e['id_especificacion'] == row['id_especificacion'] for e in articulo_resultado['especificaciones']):
+                id_especificacion = row.get('id_especificacion')
+
+                if id_especificacion and id_especificacion not in processed_especificaciones:
+                    processed_especificaciones.add(id_especificacion)
+
+                    sql_subespecificaciones = """
+                        SELECT * FROM subespecificaciones
+                        WHERE id_especificacion = %s
+                    """
+                    await cursor.execute(sql_subespecificaciones, (id_especificacion,))
+                    subespecificaciones_raw = await cursor.fetchall()
+                    subespecificaciones = {sub['clave']: sub['valor'] for sub in subespecificaciones_raw}
+
                     especificacion = {
-                        'id_especificacion': row['id_especificacion'],
-                        'nombre_especificacion': row['nombre_especificacion'],
-                        'valor_especificacion': row['valor_especificacion'],
+                        'tipo': row['tipo'],
+                        'subespecificaciones': subespecificaciones
                     }
                     articulo_resultado['especificaciones'].append(especificacion)
-
                 if row['url_image'] and not any(img['url_image'] == row['url_image'] for img in articulo_resultado['imagenes']):
                     imagen = {
                         'url_image': row['url_image'],

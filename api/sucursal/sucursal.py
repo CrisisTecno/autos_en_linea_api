@@ -1,3 +1,4 @@
+import datetime
 from flask import Blueprint, render_template
 from config.database import connect_to_database
 from flask import Flask, Response, jsonify, request
@@ -19,6 +20,10 @@ async def process_sucursal(connection):
             sucursal_results = await cursor.fetchall()
 
             for sucursal_record in sucursal_results:
+
+                for key, value in sucursal_record.items():
+                    if isinstance(value, datetime.datetime):
+                        sucursal_record[key] = int(value.timestamp() * 1000)
                 id_sucursal = sucursal_record['id_sucursal']
 
                 sql_sucursales_imagenes = """SELECT * FROM images_sucursal
@@ -27,11 +32,20 @@ async def process_sucursal(connection):
                 sucursal_images = await cursor.fetchall()
                 sucursal_record['sucursal_images'] = sucursal_images
 
-                sql_articulos = """SELECT articulo.* FROM articulo
+                sql_articulos = """SELECT articulo.ano,articulo.categoria, articulo.color,articulo.created,articulo.descripcion,
+                articulo.enable,articulo.id_articulo,
+                articulo.kilometraje,articulo.lastInventoryUpdate,articulo.lastUpdate,articulo.mainImage,
+                articulo.marca,articulo.modelo,articulo.precio
+                FROM articulo 
                                    JOIN articulo_sucursal ON articulo.id_articulo = articulo_sucursal.id_articulo
                                    WHERE articulo_sucursal.id_sucursal = %s;"""
                 await cursor.execute(sql_articulos, (id_sucursal,))
                 articulos_list = await cursor.fetchall()
+                for articulos in articulos_list:
+                    for key, value in articulos.items():
+                        if isinstance(value, datetime.datetime):
+                            articulos[key] = int(value.timestamp() * 1000)
+
                 sucursal_record['sucursal_articulos'] = articulos_list
 
             return sucursal_results

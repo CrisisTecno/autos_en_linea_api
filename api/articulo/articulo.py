@@ -17,18 +17,21 @@ async def get_articulos(connection):
         async with connection.cursor() as cursor:
             sql_articulo =  """
         SELECT a.*, 
-               e.id_especificacion, e.tipo, e.nombre_especificacion, e.valor_especificacion,
+               e.id_especificacion, e.tipo, 
                img.url_image, img.descripcion as img_descripcion
         FROM articulo a
-        LEFT JOIN especificaciones_articulo e ON a.id_articulo = e.id_articulo
+        LEFT JOIN especificaciones e ON a.id_articulo = e.id_articulo
         LEFT JOIN images_articulo img ON a.id_articulo = img.id_articulo
         ORDER BY a.id_articulo
     """
             await cursor.execute(sql_articulo)
             raw_results = await cursor.fetchall()
             articulo_results = {}
+            articulo_results = {}
+            processed_especificaciones = set()
             for row in raw_results:
                 id_articulo = row['id_articulo']
+                id_especificacion = row.get('id_especificacion')
                 if id_articulo not in articulo_results:
                     articulo_results[id_articulo] = {
                         'id_articulo': id_articulo,
@@ -38,9 +41,9 @@ async def get_articulos(connection):
                         'ano': row['ano'],
                         'precio': row['precio'],
                         'kilometraje': row['kilometraje'],
-                        'created': row['created'],
-                        'lastUpdate': row['lastUpdate'],
-                        'lastInventoryUpdate': row['lastInventoryUpdate'],
+                        'created': int(row['created'].timestamp() * 1000),
+                        'lastUpdate': int(row['lastUpdate'].timestamp() * 1000),
+                        'lastInventoryUpdate': int(row['lastInventoryUpdate'].timestamp() * 1000),
                         'enable': row['enable'],
                         'descripcion': row['descripcion'],
                         'enable': row['enable'],
@@ -49,18 +52,23 @@ async def get_articulos(connection):
                         'imagenes': []
                     }
 
-                id_especificacion = row.get('id_especificacion')
-                nombre_especificacion = row.get('nombre_especificacion')
-                valor_especificacion = row.get('valor_especificacion')
-                if id_especificacion and not any(e['id_especificacion'] == id_especificacion for e in articulo_results[id_articulo]['especificaciones']):
+                if id_especificacion and id_especificacion not in processed_especificaciones:
+                    processed_especificaciones.add(id_especificacion)
+
+                    sql_subespecificaciones = """
+                        SELECT * FROM subespecificaciones
+                        WHERE id_especificacion = %s
+                    """
+                    await cursor.execute(sql_subespecificaciones, (id_especificacion,))
+                    subespecificaciones_raw = await cursor.fetchall()
+
+                    subespecificaciones = {sub['clave']: sub['valor'] for sub in subespecificaciones_raw}
                     especificacion = {
-                        'id_especificacion': id_especificacion,
-                        'nombre_especificacion': nombre_especificacion,
-                        'valor_especificacion': valor_especificacion,
+                        'tipo': row['tipo'],
+                        'subespecificaciones': subespecificaciones
                     }
                     articulo_results[id_articulo]['especificaciones'].append(especificacion)
 
-                # Procesar imágenes
                 url_image = row.get('url_image')
                 descripcion = row.get('descripcion')
                 if url_image and not any(img['url_image'] == url_image for img in articulo_results[id_articulo]['imagenes']):
@@ -84,3 +92,5 @@ async def get_articulos_all():
             return jsonify({"success": True, "data": articulo})
         except Exception as e:
             return jsonify({"error": "Database error: {}".format(e)}), 500
+        
+

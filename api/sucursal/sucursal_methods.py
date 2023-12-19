@@ -46,7 +46,7 @@ async def actualizar_sucursal(id_sucursal):
     try:
         async with connect_to_database() as connection:
             data = request.json
-            campos_permitidos = ['direccion', 'telefono', 'nombre', 'gerente', 'contacto', 'correo_electronico', 'url_logo', 'coordenadas', 'horarios_de_atencion']
+            campos_permitidos = ['direccion', 'telefono', 'nombre', 'gerente', 'contacto', 'correo_electronico', 'url_logo', 'coordenadas', 'horarios_de_atencion','lastUpdate','created']
             
             if not any(campo in data for campo in campos_permitidos):
                 return jsonify({"error": "Se requiere al menos un campo para actualizar"}), 400

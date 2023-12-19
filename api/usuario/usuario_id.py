@@ -8,14 +8,20 @@ usuario_fl1=Blueprint('usuario_id', __name__)
 async def get_usuario(connection, usuario_id):
     try:
         async with connection.cursor() as cursor:
-            # Obtener información de la sucursal
             sql_usuario = """SELECT * FROM usuario WHERE id_usuario = %s"""
             await cursor.execute(sql_usuario, (usuario_id,))
             usuario_info = await cursor.fetchone()
+
+            if usuario_info:
+                for key in ['created', 'lastUpdate']: 
+                    if usuario_info[key]:
+                        usuario_info[key] = int(usuario_info[key].timestamp() * 1000)
+
             return usuario_info
     except Exception as e:
-        print(f"Error obtaining sucursal info for ID {usuario_id}: {e}")
+        print(f"Error obtaining user info for ID {usuario_id}: {e}")
         return None
+
     
 @usuario_fl1.route('/<string:usuario_id>', methods=['GET'])
 async def get_usuario_by_id(usuario_id):

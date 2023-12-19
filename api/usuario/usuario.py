@@ -3,6 +3,7 @@ from config.database import connect_to_database
 from flask import Flask, Response, jsonify, request
 from .usuario_id import usuario_fl1
 from .usuario_methods import usuario_fl2
+import datetime
 
 usuario_fl = Blueprint('usuario', __name__)
 usuario_fl.register_blueprint(usuario_fl1,)
@@ -15,6 +16,11 @@ async def process_usuario(connection):
             await cursor.execute(sql_sucursal)
             usuario_results = await cursor.fetchall()
             
+            for usuario_record in usuario_results:
+
+                for key, value in usuario_record.items():
+                    if isinstance(value, datetime.datetime):
+                        usuario_record[key] = int(value.timestamp() * 1000)
             return usuario_results
     finally:
         connection.close()

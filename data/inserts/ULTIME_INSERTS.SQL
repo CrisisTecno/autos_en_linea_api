@@ -72,3 +72,22 @@ INSERT INTO images_sucursal (url_image, descripcion, id_sucursal) VALUES
 ('img_sucursal3_c.jpg', 'Imagen Sucursal C', 3),
 ('img_sucursal4_d.jpg', 'Imagen Sucursal D', 3),
 ('img_sucursal5_e.jpg', 'Imagen Sucursal E', 5);
+
+
+INSERT INTO especificaciones (tipo, id_articulo) VALUES ('Auto', 1);
+INSERT INTO especificaciones (tipo, id_articulo) VALUES ('SUV', 2);
+INSERT INTO especificaciones (tipo, id_articulo) VALUES ('Motos', 3);
+INSERT INTO especificaciones (tipo, id_articulo) VALUES ('Camiones', 4);
+INSERT INTO especificaciones (tipo, id_articulo) VALUES ('Maquinaria pesada', 5);
+
+INSERT INTO subespecificaciones (clave, valor, id_especificacion) VALUES ('Motor', 'Gasolina', 1);
+INSERT INTO subespecificaciones (clave, valor, id_especificacion) VALUES ('Potencia', '30hp', 1);
+INSERT INTO subespecificaciones (clave, valor, id_especificacion) VALUES ('Asientos', 'Cuero', 1);
+INSERT INTO subespecificaciones (clave, valor, id_especificacion) VALUES ('Interior', 'Sistema de infotenimiento', 1);
+INSERT INTO subespecificaciones (clave, valor, id_especificacion) VALUES ('Interior', 'Asistente de voz', 1);
+INSERT INTO subespecificaciones (clave, valor, id_especificacion) VALUES ('Clave5', 'Valor5', 3);
+INSERT INTO subespecificaciones (clave, valor, id_especificacion) VALUES ('Clave6', 'Valor6', 3);
+INSERT INTO subespecificaciones (clave, valor, id_especificacion) VALUES ('Clave7', 'Valor7', 4);
+INSERT INTO subespecificaciones (clave, valor, id_especificacion) VALUES ('Clave8', 'Valor8', 4);
+INSERT INTO subespecificaciones (clave, valor, id_especificacion) VALUES ('Clave9', 'Valor9', 5);
+INSERT INTO subespecificaciones (clave, valor, id_especificacion) VALUES ('Clave10', 'Valor10', 5);

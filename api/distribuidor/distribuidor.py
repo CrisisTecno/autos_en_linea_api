@@ -1,3 +1,4 @@
+import datetime
 from flask import Blueprint, render_template
 from config.database import connect_to_database
 from flask import Flask, Response, jsonify, request
@@ -9,15 +10,22 @@ distribuidor_fl = Blueprint('distribuidor', __name__)
 distribuidor_fl.register_blueprint(distribuidor_fl1,)
 distribuidor_fl.register_blueprint(distribuidor_fl2,)
 
+
+
 async def process_distribuidor(connection):
     try:
         async with connection.cursor() as cursor:
             sql_distribuidor = "SELECT * FROM distribuidor"
             await cursor.execute(sql_distribuidor)
             distribuidores = await cursor.fetchall()
-
+            
             for distribuidor in distribuidores:
                 id_distribuidor = distribuidor['id_distribuidor']
+
+                for key, value in distribuidor.items():
+                    if isinstance(value, datetime.datetime):
+                        distribuidor[key] = int(value.timestamp() * 1000)
+
                 sql_sucursales = """
                     SELECT s.* FROM sucursal s
                     JOIN distribuidor_sucursal ds ON s.id_sucursal = ds.id_sucursal
@@ -25,11 +33,18 @@ async def process_distribuidor(connection):
                 """
                 await cursor.execute(sql_sucursales, (id_distribuidor,))
                 sucursales = await cursor.fetchall()
+
+                for sucursal in sucursales:
+                    for key, value in sucursal.items():
+                        if isinstance(value, datetime.datetime):
+                            sucursal[key] = int(value.timestamp() * 1000)
+
                 distribuidor['sucursales'] = sucursales
 
             return distribuidores
     finally:
         connection.close()
+
 
 
 

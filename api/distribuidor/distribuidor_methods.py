@@ -13,7 +13,7 @@ async def crear_distribuidor():
             data = request.json
             campos_requeridos = [
                 'gerente', 'logo_image', 'coordenadas', 'direccion',
-                'nombre', 'url_paginaWeb', 'telefono', 'email', 'horarioAtencion'
+                'nombre', 'url_paginaWeb', 'telefono', 'email', 'horarioAtencion',
             ]
             
             if not all(campo in data for campo in campos_requeridos):
@@ -51,7 +51,7 @@ async def actualizar_distribuidor(id_distribuidor):
             data = request.json
             campos_permitidos = [
                 'gerente', 'logo_image', 'coordenadas', 'direccion',
-                'nombre', 'url_paginaWeb', 'telefono', 'email', 'horarioAtencion'
+                'nombre', 'url_paginaWeb', 'telefono', 'email', 'horarioAtencion','lastUpdate','created'
             ]
 
             if not any(campo in data for campo in campos_permitidos):
