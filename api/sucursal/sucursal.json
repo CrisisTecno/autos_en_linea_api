@@ -1,0 +1,42 @@
+{
+"contacto": "6641899611",
+"coordenadas": "12312312",
+"correo_electronico": "email",
+"created": 1703020024284,
+"lastUpdate": 1703020024284,
+"direccion": 12321312,
+"gerente": "nombre gerente",
+"horarioAtencion": {
+ "Lunes": {
+        "open": 1703020024284,
+        "close": 1703020024284
+    },
+    "Martes": {
+        "open": 1703020024284,
+        "close": 1703020024284
+    },
+    "Miercoles": {
+        "open": 1703020024284,
+        "close": 1703020024284
+    },
+    "Jueves": {
+        "open": 1703020024284,
+        "close": 1703020024284
+    },
+ "Viernes": {
+        "open": 1703020024284,
+        "close": 1703020024284
+    },
+    "Sabado": {
+        "open": 1703020024284,
+        "close": 1703020024284
+    },
+ "Domingo": {
+        "open": 1703020024284,
+        "close": 1703020024284
+    }
+},
+"nombre": "sucursal A",
+"id_distribuidor": 2,
+"url_logo": "url_logo_a.jpg"
+}

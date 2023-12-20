@@ -46,7 +46,6 @@ async def process_distribuidor(connection):
                 sql_horarios = "SELECT * FROM horarios_distribuidor WHERE id_distribuidor = %s"
                 await cursor.execute(sql_horarios, (id_distribuidor,))
                 horarios_raw = await cursor.fetchall()
-                print(horarios_raw)
                 horarios_distribuidor= {}
                 for horario in horarios_raw:
                     dia = horario['day']
