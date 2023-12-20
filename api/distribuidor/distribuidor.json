@@ -1,0 +1,73 @@
+
+
+horarios de atencio:[
+   {
+        open: 1703020024284, close: 1703020024284, day:"Martes"
+    },
+   {
+        open: 1703020024284, close: 1703020024284, day:"Martes"
+    },
+   {
+        open: 1703020024284, close: 1703020024284, day:"Martes"
+    },
+   {
+        open: 1703020024284, close: 1703020024284, day:"Martes"
+    },
+   {
+        open: 1703020024284, close: 1703020024284, day:"Martes"
+    },
+    Miercoles: {
+        open: 1703020024284, close: 1703020024284
+    }
+]
+
+
+distribuidor ---> horarios de datencion
+
+    dia  str
+    open str 
+    close str
+    id_distribuidor
+
+"Thu, 14 Dec 2023 15:58:03 GMT",
+1703020024284
+
+
+"9am-5pm",
+
+{
+    gerente: das,
+     nombre: asd,
+      direccion: das, 
+      url_paginaWeb: dsa,
+       telefono: dsa,
+        email: das,
+         horarioAtencion:[
+            {Martes: {open: 1703020024284, close: 1703020024284}},
+            {Miercoles: {open: 1703020024284, close: 1703020024284}},
+            {Jueves: {open: 1703020024284, close: 1703020024284}},
+            {Viernes: {open: 1703020024284, close: 1703020024284}},
+            {Sanado: {open: 1703020024284, close: 1703020024284}},
+         ]
+    id: 082479,
+    logo_image: https://firebasestorage.googleapis.com/v0/b/autos-en-lina.appspot.com/o/distribuidores%2F082479%2Flogo_image%2Frutas_app.png?alt=media&token=429035d6-24be-4a9f-a2b9-4249f01d8411,
+    sucursales: [], 
+    created: 1703020024284,
+    lastUpdate: 1703020024284}
+
+
+
+
+    {
+        gerente: das,
+     nombre: asd,
+      direccion: das,
+       url_paginaWeb: dsa, 
+       telefono: dsa,
+        email: das, 
+        horarioAtencion: {Martes: {open: 1703020024284, close: 1703020024284}},
+         id: 082479,
+          logo_image: https://firebasestorage.googleapis.com/v0/b/autos-en-lina.appspot.com/o/distribuidores%2F082479%2Flogo_image%2Frutas_app.png?alt=media&token=429035d6-24be-4a9f-a2b9-4249f01d8411,
+           sucursales: [1,2,3], 
+           created: 1703020024284, 
+           lastUpdate: 1703020024284}

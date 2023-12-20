@@ -1,0 +1,41 @@
+
+"ano": 2023,
+"categoria": "Auto",
+"color": "Rojo",
+"descripcion": "Descripcion auto",
+"enable": true,
+"imagen_principal": "https://example.com/images/articulo1.jpg",
+"marca": "BMW",
+"modelo": "M3",
+"precio": 120000,
+"expedition_date": 123123123,
+"lastInventoryUpdate": 1703020024284,
+"created": 1703020024284,
+"lastUpdate": 1703020024284,
+"kilometraje": 1200,
+"especificaciones": [
+    {
+    "subespecificaciones": {
+    "Asientos": "Cuero",
+    "Interior": "Asistente de voz",
+    "Motor": "Gasolina",
+    "Potencia": "30hp"
+    },
+    "tipo": "Auto"
+    }
+],
+"imagenes": [
+    {
+        "descripcion": "Descripción A",
+        "url_image": "https://example.com/images/articulo1.jpg"
+    },
+    {
+        "descripcion": "Descripción A",
+        "url_image": "img_articulo3_c.jpg"
+    },
+    {
+        "descripcion": "Descripción A",
+        "url_image": "img_articulo1_a.jpg"
+    }
+],
+"sucursal_id"': 2

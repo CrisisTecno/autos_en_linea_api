@@ -2,7 +2,8 @@
 from flask import Blueprint, render_template
 from config.database import connect_to_database
 from flask import Flask, Response, jsonify, request
-from utils.time import timedelta_to_string,timedelta_to_milliseconds
+from utils.time import convert_milliseconds_to_datetime,convert_milliseconds_to_time_string,timedelta_to_milliseconds
+
 sucursal_fl1=Blueprint('sucursal_id', __name__)
 
 async def get_sucursal_basic(connection, sucursal_id):
@@ -77,6 +78,8 @@ async def process_sucursal_por_id(connection, id_sucursal):
                     for key in ['created', 'lastUpdate', 'lastInventoryUpdate']:
                         if articulo[key]:
                             articulo[key] = int(articulo[key].timestamp() * 1000)
+
+        
 
                 sucursal_record['sucursal_articulos'] = articulos_list
                 sql_horarios_sucursal = "SELECT * FROM horarios_sucursal WHERE id_sucursal = %s"

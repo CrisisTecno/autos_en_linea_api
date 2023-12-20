@@ -87,7 +87,9 @@ async def crear_sucursal():
                 for dia, horarios in data['horarioAtencion'].items():
                     sql_horarios = """INSERT INTO horarios_sucursal (id_sucursal, day, open, close) 
                                       VALUES (%s, %s, %s, %s)"""
-                    valores_horarios = (id_sucursal, dia, convert_milliseconds_to_time_string(horarios['open']),convert_milliseconds_to_time_string( horarios['close']))
+                    valores_horarios = (id_sucursal, dia, 
+                    convert_milliseconds_to_time_string(horarios['open']),
+                    convert_milliseconds_to_time_string( horarios['close']))
                     await cursor.execute(sql_horarios, valores_horarios)
 
                 await connection.commit()

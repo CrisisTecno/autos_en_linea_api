@@ -111,6 +111,13 @@ CREATE TABLE articulo_sucursal (
     FOREIGN KEY (id_articulo) REFERENCES articulo(id_articulo),
     FOREIGN KEY (id_sucursal) REFERENCES sucursal(id_sucursal)
 );
+-- CREATE TABLE articulo_distribuidor (
+--     id_relacion INT AUTO_INCREMENT  PRIMARY KEY,
+--     id_articulo INT,
+--     id_sucursal INT,
+--     FOREIGN KEY (id_articulo) REFERENCES articulo(id_articulo),
+--     FOREIGN KEY (id_distribuidor) REFERENCES distribuidor(id_distribuidor)
+-- );
 CREATE TABLE images_sucursal (
     id_images_sucursal INT AUTO_INCREMENT  PRIMARY KEY,
     url_image TEXT,
