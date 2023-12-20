@@ -156,12 +156,18 @@ async def obtener_usuarios_por_distribuidor(id_distribuidor):
             async with connection.cursor() as cursor:
               
                 sql = """
-                    SELECT * FROM usuario
+                    SELECT apellidos,coordenadas,correo_electronico,created,id_distribuidor,id_sucursal
+                    id_usuario,lastUpdate,nombres,num_telefono,rol,url_logo  FROM usuario
                     WHERE id_distribuidor = %s
                 """
                 await cursor.execute(sql, (id_distribuidor,))
                 usuarios = await cursor.fetchall()
-
+                print(usuarios)
+                for user in usuarios:
+                    for key in ['created', 'lastUpdate']:
+                        if user[key]:
+                            user[key] = int(user[key].timestamp() * 1000)
+                    
                 if not usuarios:
                     return jsonify({"error": f"No se encontraron usuarios para el distribuidor con ID {id_distribuidor}"}), 404
 
