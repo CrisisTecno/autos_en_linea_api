@@ -6,6 +6,8 @@ from .distribuidor_id import distribuidor_fl1
 from .distribuidor_methods import distribuidor_fl2
 # from api.sucursal.sucursal_id import get_sucursal_for_distribuidor
 from utils.time import timedelta_to_string,timedelta_to_milliseconds
+
+
 distribuidor_fl = Blueprint('distribuidor', __name__)
 distribuidor_fl.register_blueprint(distribuidor_fl1,)
 distribuidor_fl.register_blueprint(distribuidor_fl2,)

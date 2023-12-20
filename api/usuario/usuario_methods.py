@@ -94,7 +94,6 @@ async def usuario_existe_por_telefono():
     num_telefono = request.args.get('num_telefono')
     if not num_telefono:
         return jsonify({"error": "Número de teléfono requerido"}), 400
-
     try:
         async with connect_to_database() as connection:
             async with connection.cursor() as cursor:
@@ -102,9 +101,9 @@ async def usuario_existe_por_telefono():
                 sql = "SELECT COUNT(*) FROM usuario WHERE num_telefono = %s"
                 await cursor.execute(sql, (num_telefono,))
                 result = await cursor.fetchone()
-             
+                print(result)
                 existe = result['COUNT(*)'] > 0
-
+                print(result['COUNT(*)'])
             return jsonify({"existe": existe}), 200
 
     except Exception as e:

@@ -157,3 +157,33 @@ async def eliminar_articulo(id_articulo):
 
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+
+# @articulo_fl2.route('/<str:id_usuario>/<int:id_articulo>', methods=['POST'])
+# async def aritulo_favorito(id_articulo,id_usuario):
+
+@articulo_fl2.route('/<int:id_articulo>/<string:usuario_id>', methods=['POST'])
+async def articulo_favorito(id_usuario, id_articulo):
+    try:
+        async with connect_to_database() as connection:
+            async with connection.cursor() as cursor:
+                sql_check = """SELECT enable FROM favoritos WHERE id_usuario = %s AND id_articulo = %s"""
+                await cursor.execute(sql_check, (id_usuario, id_articulo))
+                result = await cursor.fetchone()
+
+                if result:
+                    new_enable_status = not result['enable']
+                    sql_update = """UPDATE favoritos SET enable =
+                      %s WHERE id_usuario = %s AND id_articulo = %s"""
+                    await cursor.execute(sql_update, (new_enable_status, id_usuario, id_articulo))
+                else:
+                    sql_insert = """INSERT INTO favoritos (id_usuario, id_articulo, fecha_agregado, enable) 
+                    VALUES (%s, %s, %s, %s)"""
+                    fecha_agregado = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    await cursor.execute(sql_insert, (id_usuario, id_articulo, fecha_agregado, True))
+
+                await connection.commit()
+
+            return jsonify({"success": True, "message": "Estado de favorito actualizado exitosamente"}), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Error en la base de datos: {e}"}), 500

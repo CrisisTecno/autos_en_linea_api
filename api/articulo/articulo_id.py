@@ -21,7 +21,7 @@ async def get_articulo(connection, id_articulo):
 
             if not raw_results:
                 return None  # No se encontró el artículo
-
+            print(raw_results)
             articulo_resultado = {
                 'id_articulo': raw_results[0]['id_articulo'],
                 'marca': raw_results[0]['marca'],
