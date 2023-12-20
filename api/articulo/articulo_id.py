@@ -36,7 +36,8 @@ async def get_articulo(connection, id_articulo):
                 'enable': raw_results[0]['enable'],
                 'descripcion': raw_results[0]['descripcion'],
                 'enable': raw_results[0]['enable'],
-                'color': raw_results[0]['color'],        
+                'color': raw_results[0]['color'],  
+                'mainImage': raw_results[0]['mainImage'],      
                 'especificaciones': [],
                 'imagenes': []
             }
@@ -74,6 +75,7 @@ async def get_articulo(connection, id_articulo):
     
 @articulo_fl1.route('/<int:articulo_id>', methods=['GET'])
 async def get_articulo_by_id(articulo_id):
+
     async with connect_to_database() as con:
         try:
             articulo_by_id= await get_articulo(con,articulo_id)

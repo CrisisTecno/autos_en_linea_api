@@ -27,7 +27,6 @@ async def get_articulos(connection):
             await cursor.execute(sql_articulo)
             raw_results = await cursor.fetchall()
             articulo_results = {}
-            articulo_results = {}
             processed_especificaciones = set()
             for row in raw_results:
                 id_articulo = row['id_articulo']
@@ -48,6 +47,7 @@ async def get_articulos(connection):
                         'descripcion': row['descripcion'],
                         'enable': row['enable'],
                         'color': row['color'],
+                        'mainImage': row['mainImage'],
                         'especificaciones': [],
                         'imagenes': []
                     }

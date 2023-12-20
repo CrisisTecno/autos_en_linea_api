@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 from flask import Blueprint
 from config.database import connect_to_database
 from utils.time import convert_milliseconds_to_datetime,convert_milliseconds_to_time_string
-
+from datetime import datetime
 articulo_fl2 = Blueprint('articulo_post', __name__)
 
 # @articulo_fl2.route('/articulo', methods=['POST'])
@@ -40,15 +40,21 @@ articulo_fl2 = Blueprint('articulo_post', __name__)
 
 #     except Exception as e:
 #         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+def get_default_expedition_date():
+    now = datetime.now()
+    timestamp_seconds = datetime.timestamp(now)
+    timestamp_milliseconds = int(timestamp_seconds * 1000)
+    return timestamp_milliseconds
 
 @articulo_fl2.route('/articulo', methods=['POST'])
 async def crear_articulo():
     try:
         async with connect_to_database() as connection:
             data = request.json
+            expedition_date = data['expedition_date'] if 'expedition_date' in data else get_default_expedition_date()
             campos_requeridos = ['ano', 'categoria', 'color', 
                                  'descripcion', 'enable', 'mainImage', 'marca', 
-                                 'modelo','precio','expedition_date','created',
+                                 'modelo','precio','created',
                                  'lastUpdate','lastInventoryUpdate','kilometraje']   
             if not all(campo in data for campo in campos_requeridos):
                 return jsonify({"error": "Faltan campos requeridos"}), 400
@@ -69,7 +75,7 @@ async def crear_articulo():
                     data['marca'], 
                     data['modelo'],
                     data['precio'], 
-                    convert_milliseconds_to_datetime(data['expedition_date']),
+                    convert_milliseconds_to_datetime(expedition_date),
                     convert_milliseconds_to_datetime(data['created']),
                     convert_milliseconds_to_datetime(data['lastUpdate']), 
                     convert_milliseconds_to_datetime(data['lastInventoryUpdate']), 
