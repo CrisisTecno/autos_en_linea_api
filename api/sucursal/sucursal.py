@@ -5,6 +5,7 @@ from flask import Flask, Response, jsonify, request
 from .sucursal_id import sucursal_fl1
 from .sucursal_methods import sucursal_fl2
 from .images_sucursal import images_sucursal_fl2
+from utils.time import timedelta_to_string,timedelta_to_milliseconds
 sucursal_fl = Blueprint('sucursal', __name__)
 
 
@@ -47,6 +48,19 @@ async def process_sucursal(connection):
                             articulos[key] = int(value.timestamp() * 1000)
 
                 sucursal_record['sucursal_articulos'] = articulos_list
+
+                sql_horarios_sucursal = "SELECT * FROM horarios_sucursal WHERE id_sucursal = %s"
+                await cursor.execute(sql_horarios_sucursal, (id_sucursal,))
+                horarios_raw = await cursor.fetchall()
+                horarios_sucursal = {}
+                for horario in horarios_raw:
+                    dia = horario['day']
+                    horarios_sucursal[dia] = {
+                        'open': timedelta_to_milliseconds(horario['open']),
+                        'close': timedelta_to_milliseconds(horario['close'])
+                    }
+
+                sucursal_record['horarios_sucursal'] = horarios_sucursal
 
             return sucursal_results
     finally:

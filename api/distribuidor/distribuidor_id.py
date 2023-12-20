@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template
 from config.database import connect_to_database
 from flask import Flask, Response, jsonify, request
-
+from utils.time import timedelta_to_string,timedelta_to_milliseconds
 distribuidor_fl1=Blueprint('distribuidor_id', __name__)
 
 
@@ -31,6 +31,19 @@ async def process_distribuidor_por_id(connection, id_distribuidor):
 
                 distribuidor['sucursales'] = sucursales
 
+                sql_horarios = "SELECT * FROM horarios_distribuidor WHERE id_distribuidor = %s"
+                await cursor.execute(sql_horarios, (id_distribuidor,))
+
+                horarios_raw = await cursor.fetchall()
+                horarios_distribuidor= {}
+                for horario in horarios_raw:
+                    dia = horario['day']
+                    horarios_distribuidor[dia] = {
+                        'open': int(timedelta_to_milliseconds(horario['open'])),
+                        'close': int(timedelta_to_milliseconds(horario['close']))
+                    }
+
+                distribuidor['horarios_distribuidor'] = horarios_distribuidor
             return distribuidor
     finally:
         connection.close()

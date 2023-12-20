@@ -17,7 +17,6 @@ async def process_usuario(connection):
             usuario_results = await cursor.fetchall()
             
             for usuario_record in usuario_results:
-
                 for key, value in usuario_record.items():
                     if isinstance(value, datetime.datetime):
                         usuario_record[key] = int(value.timestamp() * 1000)

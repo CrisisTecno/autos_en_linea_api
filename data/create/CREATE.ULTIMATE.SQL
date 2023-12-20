@@ -9,8 +9,8 @@ CREATE TABLE sucursal (
     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     url_logo VARCHAR(255),
-    coordenadas VARCHAR(255),
-    horarios_de_atencion VARCHAR(255)
+    coordenadas VARCHAR(255)
+    -- horarios_de_atencion VARCHAR(255)
 );
 
 CREATE TABLE distribuidor (
@@ -24,8 +24,8 @@ CREATE TABLE distribuidor (
     lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     url_paginaWeb VARCHAR(255),
     telefono VARCHAR(100),
-    email VARCHAR(255),
-    horarioAtencion VARCHAR(255)
+    email VARCHAR(255)
+    -- horarioAtencion VARCHAR(255)
 );
 
 CREATE TABLE distribuidor_sucursal (
@@ -79,14 +79,14 @@ CREATE TABLE articulo (
     descripcion TEXT,
     color VARCHAR(255)
 );
-CREATE TABLE especificaciones_articulo (
-    id_especificacion VARCHAR(255) PRIMARY KEY,
-    tipo VARCHAR(255),
-    id_articulo INT,
-    nombre_especificacion VARCHAR(255),
-    valor_especificacion TEXT,
-    FOREIGN KEY (id_articulo) REFERENCES articulo(id_articulo)
-);
+-- CREATE TABLE especificaciones_articulo (
+--     id_especificacion VARCHAR(255) PRIMARY KEY,
+--     tipo VARCHAR(255),
+--     id_articulo INT,
+--     nombre_especificacion VARCHAR(255),
+--     valor_especificacion TEXT,
+--     FOREIGN KEY (id_articulo) REFERENCES articulo(id_articulo)
+-- );
 CREATE TABLE favoritos (
     id_favorito INT PRIMARY KEY AUTO_INCREMENT,
     id_usuario VARCHAR(255),
@@ -119,7 +119,38 @@ CREATE TABLE images_sucursal (
     FOREIGN KEY (id_sucursal) REFERENCES sucursal(id_sucursal)
 );
 
+CREATE TABLE especificaciones (
+    id_especificacion INT AUTO_INCREMENT PRIMARY KEY,
+    tipo VARCHAR(255),
+    id_articulo INT,
+    FOREIGN KEY (id_articulo) REFERENCES articulo(id_articulo)
+);
 
+CREATE TABLE subespecificaciones (
+    id_subespecificacion INT AUTO_INCREMENT PRIMARY KEY,
+    clave VARCHAR(255),
+    valor TEXT,
+    id_especificacion INT,
+    FOREIGN KEY (id_especificacion) REFERENCES especificaciones(id_especificacion)
+);
+
+CREATE TABLE horarios_distribuidor (
+    id_horario INT AUTO_INCREMENT PRIMARY KEY,
+    open TIME,
+    close TIME,
+    day VARCHAR(10),
+    id_distribuidor INT,
+    FOREIGN KEY (id_distribuidor) REFERENCES distribuidor(id_distribuidor)
+);
+
+CREATE TABLE horarios_sucursal (
+    id_horario INT AUTO_INCREMENT PRIMARY KEY,
+    open TIME,
+    close TIME,
+    day VARCHAR(10),
+    id_sucursal INT,
+    FOREIGN KEY (id_sucursal) REFERENCES sucursal(id_sucursal)
+);
 
 
 
