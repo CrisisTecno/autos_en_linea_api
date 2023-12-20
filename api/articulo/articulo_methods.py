@@ -97,6 +97,7 @@ async def crear_articulo():
                         await cursor.execute(sql_images_articulo, (imagen['url_image'], imagen['descripcion'], id_articulo))
 
                     await connection.commit()
+                
 
             return jsonify({"success": True, "message": "Artículo creado exitosamente", "id_articulo": id_articulo}), 201
 

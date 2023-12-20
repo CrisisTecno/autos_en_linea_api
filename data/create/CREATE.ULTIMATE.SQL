@@ -79,14 +79,6 @@ CREATE TABLE articulo (
     descripcion TEXT,
     color VARCHAR(255)
 );
--- CREATE TABLE especificaciones_articulo (
---     id_especificacion VARCHAR(255) PRIMARY KEY,
---     tipo VARCHAR(255),
---     id_articulo INT,
---     nombre_especificacion VARCHAR(255),
---     valor_especificacion TEXT,
---     FOREIGN KEY (id_articulo) REFERENCES articulo(id_articulo)
--- );
 CREATE TABLE favoritos (
     id_favorito INT PRIMARY KEY AUTO_INCREMENT,
     id_usuario VARCHAR(255),
@@ -95,6 +87,15 @@ CREATE TABLE favoritos (
     FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario),
     FOREIGN KEY (id_articulo) REFERENCES articulo(id_articulo)
 );
+-- CREATE TABLE especificaciones_articulo (
+--     id_especificacion VARCHAR(255) PRIMARY KEY,
+--     tipo VARCHAR(255),
+--     id_articulo INT,
+--     nombre_especificacion VARCHAR(255),
+--     valor_especificacion TEXT,
+--     FOREIGN KEY (id_articulo) REFERENCES articulo(id_articulo)
+-- );
+
 
 CREATE TABLE images_articulo (
     id_images_articulo INT AUTO_INCREMENT  PRIMARY KEY,

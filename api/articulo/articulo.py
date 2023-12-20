@@ -77,6 +77,16 @@ async def get_articulos(connection):
                         'descripcion': descripcion,
                     }
                     articulo_results[id_articulo]['imagenes'].append(imagen)
+
+                sql_sucursales = """
+                        SELECT id_sucursal FROM articulo_sucursal
+                        WHERE id_articulo = %s
+                    """
+                await cursor.execute(sql_sucursales, (id_articulo,))
+                sucursales = await cursor.fetchall()
+                id_sucursales = [sucursal['id_sucursal'] for sucursal in sucursales]
+                articulo_results[id_articulo]['id_sucursales'] = id_sucursales
+                
             return list(articulo_results.values())
     finally:
         connection.close()
