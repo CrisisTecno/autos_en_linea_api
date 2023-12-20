@@ -117,17 +117,19 @@ async def obtener_autos_favoritos_usuario(id_usuario):
         async with connect_to_database() as connection:
             async with connection.cursor() as cursor:
                 sql = """
-                    SELECT articulo.* FROM articulo
+                    SELECT articulo.*, favoritos.enable as favorite FROM articulo
                     JOIN favoritos ON articulo.id_articulo = favoritos.id_articulo
-                    WHERE favoritos.id_usuario = %s
+                    WHERE favoritos.id_usuario = %s 
                 """
                 await cursor.execute(sql, (id_usuario,))
                 autos_favoritos = await cursor.fetchall()
-
+                print(autos_favoritos)
                 if not autos_favoritos:
                     return jsonify({"error": f"No se encontraron autos favoritos para el usuario con ID {id_usuario}"}), 404
 
-                return jsonify({"success": True, "autos_favoritos": autos_favoritos}), 200
+                articulos_favoritos = [auto for auto in autos_favoritos if auto['favorite']]
+
+                return jsonify({"success": True, "autos_favoritos": articulos_favoritos}), 200
 
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500

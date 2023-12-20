@@ -161,7 +161,7 @@ async def eliminar_articulo(id_articulo):
 # @articulo_fl2.route('/<str:id_usuario>/<int:id_articulo>', methods=['POST'])
 # async def aritulo_favorito(id_articulo,id_usuario):
 
-@articulo_fl2.route('/<int:id_articulo>/<string:usuario_id>', methods=['POST'])
+@articulo_fl2.route('/<int:id_articulo>/<string:id_usuario>', methods=['POST'])
 async def articulo_favorito(id_usuario, id_articulo):
     try:
         async with connect_to_database() as connection:
@@ -178,7 +178,7 @@ async def articulo_favorito(id_usuario, id_articulo):
                 else:
                     sql_insert = """INSERT INTO favoritos (id_usuario, id_articulo, fecha_agregado, enable) 
                     VALUES (%s, %s, %s, %s)"""
-                    fecha_agregado = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    fecha_agregado = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     await cursor.execute(sql_insert, (id_usuario, id_articulo, fecha_agregado, True))
 
                 await connection.commit()
