@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify
 from flask import Blueprint
 from config.database import connect_to_database
 from utils.time import convert_milliseconds_to_datetime,convert_milliseconds_to_time_string
+from api.distribuidor.distribuidor_methods import procesar_articulo
+from datetime import datetime
 
 sucursal_fl2 = Blueprint('sucursal_methods', __name__)
 
@@ -91,6 +93,11 @@ async def crear_sucursal():
                     convert_milliseconds_to_time_string(horarios['open']),
                     convert_milliseconds_to_time_string( horarios['close']))
                     await cursor.execute(sql_horarios, valores_horarios)
+                if 'imagenes' in data:
+                    for imagen in data['imagenes']:
+                        sql_images_articulo = """INSERT INTO images_sucursal (url_image, descripcion, id_sucursal) VALUES (%s, %s, %s)"""
+                        await cursor.execute(sql_images_articulo, (imagen['url_image'], imagen['descripcion'], id_sucursal))
+                        await connection.commit()
 
                 await connection.commit()
 
@@ -104,7 +111,11 @@ async def actualizar_sucursal(id_sucursal):
     try:
         async with connect_to_database() as connection:
             data = request.json
-            campos_permitidos = ['direccion', 'telefono', 'nombre', 'gerente', 'contacto', 'correo_electronico', 'url_logo', 'coordenadas', 'horarios_de_atencion','lastUpdate','created']
+            campos_permitidos = ['contacto', 'coordenadas', 
+                                 'correo_electronico', 'direccion', 'gerente', 
+                                   
+                                 'nombre',
+                                 'sucursal_images','telefono','url_logo','horarios_sucursal']
             
             if not any(campo in data for campo in campos_permitidos):
                 return jsonify({"error": "Se requiere al menos un campo para actualizar"}), 400
@@ -118,11 +129,36 @@ async def actualizar_sucursal(id_sucursal):
                         sql_update += f"{campo} = %s, "
                         valores.append(data[campo])
 
-                sql_update = sql_update.rstrip(', ')
-                sql_update += " WHERE id_sucursal = %s"
+                # sql_update += "lastUpdate = %s WHERE id_sucursal = %s"
+                # valores.append(convert_milliseconds_to_datetime(data.get('lastUpdate', int(datetime.now().timestamp() * 1000))))
+                # valores.append(id_sucursal)
+
+                last_update = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                sql_update += "lastUpdate = %s WHERE id_sucursal = %s"
+                valores.append(last_update)
                 valores.append(id_sucursal)
 
                 await cursor.execute(sql_update, valores)
+
+                if 'horarioAtencion' in data:
+                    for dia, horarios in data['horarioAtencion'].items():
+                        sql_horarios = """UPDATE horarios_sucursal 
+                                          SET open = %s, close = %s 
+                                          WHERE id_sucursal = %s AND day = %s"""
+                        valores_horarios = (convert_milliseconds_to_time_string(horarios['open']),
+                                            convert_milliseconds_to_time_string(horarios['close']),
+                                            id_sucursal, dia)
+                        await cursor.execute(sql_horarios, valores_horarios)
+
+                if 'imagenes' in data:
+                    sql_eliminar_imagenes = "DELETE FROM images_sucursal WHERE id_sucursal = %s"
+                    await cursor.execute(sql_eliminar_imagenes, (id_sucursal,))
+
+                    for imagen in data['imagenes']:
+                        sql_insertar_imagen = """INSERT INTO images_sucursal (url_image, descripcion, id_sucursal) 
+                                                 VALUES (%s, %s, %s)"""
+                        await cursor.execute(sql_insertar_imagen, (imagen['url_image'], imagen['descripcion'], id_sucursal))   
+
                 await connection.commit()
 
             return jsonify({"success": True, "message": f"Sucursal con ID {id_sucursal} actualizada exitosamente"}), 200
@@ -172,6 +208,7 @@ async def agregar_imagen_sucursal(id_sucursal):
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
 
+
 @sucursal_fl2.route('/<int:id_sucursal>/articulos', methods=['GET'])
 async def obtener_autos_por_sucursal(id_sucursal):
     try:
@@ -194,23 +231,76 @@ async def obtener_autos_por_sucursal(id_sucursal):
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
 
 
-
-@sucursal_fl2.route('/<int:id_sucursal>/usuarios', methods=['GET'])
-async def obtener_usuarios_por_sucursal(id_sucursal):
+@sucursal_fl2.route('/<int:id_sucursal>/articulos', methods=['GET'])
+async def obtener_articulos_por_distribuidor(id_sucursal):
     try:
         async with connect_to_database() as connection:
             async with connection.cursor() as cursor:
+                sql_query = """
+                    SELECT a.*
+                    FROM articulo a
+                    JOIN articulo_sucursal asu ON a.id_articulo = asu.id_articulo
+                    WHERE ds.id_sucursal = %s;
+                """
+                await cursor.execute(sql_query, (id_sucursal,))
+                articulos = await cursor.fetchall()
+
+                articulos_procesados = []
+                for articulo_record in articulos:
+                    articulo_procesado = await procesar_articulo(cursor, articulo_record['id_articulo'])
+                    articulos_procesados.append(articulo_procesado)
+
+                return jsonify({"success": True, "articulos": articulos_procesados}), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+
+
+    
+@sucursal_fl2.route('/<int:id_sucursal>/usuarios', methods=['GET'])
+async def obtener_usuarios_por_distribuidor(id_sucursal):
+    try:
+        async with connect_to_database() as connection:
+            async with connection.cursor() as cursor:
+              
                 sql = """
-                    SELECT * FROM usuario
+                    SELECT apellidos,coordenadas,correo_electronico,created,id_sucursal,id_sucursal
+                    id_usuario,lastUpdate,nombres,num_telefono,rol,url_logo  FROM usuario
                     WHERE id_sucursal = %s
                 """
                 await cursor.execute(sql, (id_sucursal,))
                 usuarios = await cursor.fetchall()
-
+                print(usuarios)
+                for user in usuarios:
+                    for key in ['created', 'lastUpdate']:
+                        if user[key]:
+                            user[key] = int(user[key].timestamp() * 1000)
+                    
                 if not usuarios:
-                    return jsonify({"error": f"No se encontraron usuarios para la sucursal con ID {id_sucursal}"}), 404
+                    return jsonify({"error": f"No se encontraron usuarios para el distribuidor con ID {id_sucursal}"}), 404
 
                 return jsonify({"success": True, "usuarios": usuarios}), 200
 
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+
+
+# @sucursal_fl2.route('/<int:id_sucursal>/usuarios', methods=['GET'])
+# async def obtener_usuarios_por_sucursal(id_sucursal):
+#     try:
+#         async with connect_to_database() as connection:
+#             async with connection.cursor() as cursor:
+#                 sql = """
+#                     SELECT * FROM usuario
+#                     WHERE id_sucursal = %s
+#                 """
+#                 await cursor.execute(sql, (id_sucursal,))
+#                 usuarios = await cursor.fetchall()
+
+#                 if not usuarios:
+#                     return jsonify({"error": f"No se encontraron usuarios para la sucursal con ID {id_sucursal}"}), 404
+
+#                 return jsonify({"success": True, "usuarios": usuarios}), 200
+
+#     except Exception as e:
+#         return jsonify({"error": f"Error en la base de datos: {e}"}), 500

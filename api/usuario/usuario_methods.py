@@ -133,3 +133,5 @@ async def obtener_autos_favoritos_usuario(id_usuario):
 
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+    
+
