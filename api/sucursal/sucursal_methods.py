@@ -265,7 +265,7 @@ async def obtener_usuarios_por_distribuidor(id_sucursal):
               
                 sql = """
                     SELECT apellidos,coordenadas,correo_electronico,created,id_sucursal,id_sucursal
-                    id_usuario,lastUpdate,nombres,num_telefono,rol,url_logo  FROM usuario
+                    id_usuario,id_usuario_firebase,lastUpdate,nombres,num_telefono,rol,url_logo  FROM usuario
                     WHERE id_sucursal = %s
                 """
                 await cursor.execute(sql, (id_sucursal,))

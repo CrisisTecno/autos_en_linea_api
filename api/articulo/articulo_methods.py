@@ -116,32 +116,75 @@ async def actualizar_articulo(id_articulo):
     try:
         async with connect_to_database() as connection:
             data = request.json
-            campos_permitidos = ['marca', 'modelo', 'categoria', 'ano', 'precio', 
-                                 'kilometraje', 'descripcion', 'enable', 'color']
+            campos_permitidos = ['ano', 'categoria', 'color', 
+                                 'descripcion', 'enable', 'mainImage', 'marca', 'expedition_date',
+                                 'modelo', 'precio', 'lastInventoryUpdate', 'kilometraje']
+            cambios = []
+            valores = []
+            for campo in campos_permitidos:
+                if campo in data:
+                    cambios.append(f"{campo} = %s")
+                    valores.append(data[campo])
 
-            if not any(campo in data for campo in campos_permitidos):
-                return jsonify({"error": "Se requiere al menos un campo para actualizar"}), 400
+            if not cambios:
+                return jsonify({"error": "No se proporcionaron datos para actualizar"}), 400
 
+            # Agregar actualización de lastUpdate
+            cambios.append("lastUpdate = CURRENT_TIMESTAMP")
+            
+            sql_update_articulo = "UPDATE articulo SET " + ", ".join(cambios) + " WHERE id_articulo = %s"
+            valores.append(id_articulo)
+            
             async with connection.cursor() as cursor:
-                sql_update = "UPDATE articulo SET "
-                valores = []
+                await cursor.execute(sql_update_articulo, valores)
 
-                for campo in campos_permitidos:
-                    if campo in data:
-                        sql_update += f"{campo} = %s, "
-                        valores.append(data[campo])
+                # Actualizar o insertar especificaciones
+                # if 'especificaciones' in data:
+                #     for especificacion in data['especificaciones']:
+                #         if 'id_especificacion' in especificacion:
+                #             # Actualizar especificación existente
+                #             sql_update_especificacion = """UPDATE especificaciones SET tipo = %s WHERE id_especificacion = %s AND id_articulo = %s"""
+                #             await cursor.execute(sql_update_especificacion, (especificacion['tipo'], especificacion['id_especificacion'], id_articulo))
+                #         else:
+                #             # Insertar nueva especificación
+                #             sql_insert_especificacion = """INSERT INTO especificaciones (tipo, id_articulo) VALUES (%s, %s)"""
+                #             await cursor.execute(sql_insert_especificacion, (especificacion['tipo'], id_articulo))
+                #             id_especificacion = cursor.lastrowid
 
-                sql_update = sql_update.rstrip(', ')
-                sql_update += " WHERE id_articulo = %s"
-                valores.append(id_articulo)
+                #         # Actualizar o insertar subespecificaciones
+                #         # for subespecificacion in especificacion.get('subespecificaciones', []):
+                #         #     if 'id_subespecificacion' in subespecificacion:
+                #         #         # Actualizar subespecificación existente
+                #         #         sql_update_subespecificacion = """UPDATE subespecificaciones SET clave = %s, valor = %s WHERE id_subespecificacion = %s AND id_especificacion = %s"""
+                #         #         await cursor.execute(sql_update_subespecificacion, (subespecificacion['clave'], subespecificacion['valor'], subespecificacion['id_subespecificacion'], id_especificacion))
+                #         #     else:
+                #         #         # Insertar nueva subespecificación
+                #         #         sql_insert_subespecificacion = """INSERT INTO subespecificaciones (clave, valor, id_especificacion) VALUES (%s, %s, %s)"""
+                #         #         await cursor.execute(sql_insert_subespecificacion, (subespecificacion['clave'], subespecificacion['valor'], id_especificacion))
+                #         for clave, valor in especificacion['subespecificaciones'].items():
+                #             # Aquí, asumo que no tienes IDs para subespecificaciones individuales,
+                #             # por lo que siempre las insertarás como nuevas.
+                #             # Necesitarías ajustar esto si también necesitas actualizarlas.
+                #             sql_insert_subespecificaciones = """INSERT INTO subespecificaciones (clave, valor, id_especificacion) VALUES (%s, %s, %s)"""
+                #             await cursor.execute(sql_insert_subespecificaciones, (clave, valor, id_especificacion))
 
-                await cursor.execute(sql_update, valores)
+
+                # if 'imagenes' in data:
+                #     for imagen in data['imagenes']:
+                #         if 'id_imagen' in imagen:
+                #             sql_update_imagen = """UPDATE images_articulo SET url_image = %s, descripcion = %s WHERE id_images_articulo = %s AND id_articulo = %s"""
+                #             await cursor.execute(sql_update_imagen, (imagen['url_image'], imagen['descripcion'], imagen['id_imagen'], id_articulo))
+                #         else:
+                #             sql_insert_imagen = """INSERT INTO images_articulo (url_image, descripcion, id_articulo) VALUES (%s, %s, %s)"""
+                #             await cursor.execute(sql_insert_imagen, (imagen['url_image'], imagen['descripcion'], id_articulo))
+
                 await connection.commit()
 
             return jsonify({"success": True, "message": f"Artículo con ID {id_articulo} actualizado exitosamente"}), 200
 
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+
 
 
 @articulo_fl2.route('/articulo/<int:id_articulo>', methods=['DELETE'])
@@ -161,7 +204,7 @@ async def eliminar_articulo(id_articulo):
 # @articulo_fl2.route('/<str:id_usuario>/<int:id_articulo>', methods=['POST'])
 # async def aritulo_favorito(id_articulo,id_usuario):
 
-@articulo_fl2.route('/<int:id_articulo>/<string:id_usuario>', methods=['POST'])
+@articulo_fl2.route('/<int:id_articulo>/<int:id_usuario>', methods=['POST'])
 async def articulo_favorito(id_usuario, id_articulo):
     try:
         async with connect_to_database() as connection:

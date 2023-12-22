@@ -61,7 +61,8 @@ CREATE TABLE distribuidor_sucursal (
 );
 
 CREATE TABLE usuario (
-    id_usuario VARCHAR(255) PRIMARY KEY,
+    id_usuario INT AUTO_INCREMENT PRIMARY KEY ,
+    id_usuario_firebase VARCHAR(255),
     rol VARCHAR(100),
     nombres VARCHAR(100),
     apellidos VARCHAR(100),
@@ -94,7 +95,7 @@ CREATE TABLE usuario (
 -- );
 CREATE TABLE registro_actividades_usuario (
     id_registro INT PRIMARY KEY AUTO_INCREMENT,
-    id_usuario VARCHAR(255),
+    id_usuario INT,
     accion VARCHAR(255),
     coordenadas VARCHAR(255),
     fecha_hora TIMESTAMP,
@@ -120,7 +121,7 @@ CREATE TABLE articulo (
 );
 CREATE TABLE favoritos (
     id_favorito INT PRIMARY KEY AUTO_INCREMENT,
-    id_usuario VARCHAR(255),
+    id_usuario INT,
     id_articulo INT,
     fecha_agregado TIMESTAMP,
     FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario),

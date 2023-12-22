@@ -23,8 +23,20 @@ async def get_usuario(connection, usuario_id):
         return None
 
     
-@usuario_fl1.route('/<string:usuario_id>', methods=['GET'])
+@usuario_fl1.route('/<int:id_usuario>', methods=['GET'])
 async def get_usuario_by_id(usuario_id):
+    async with connect_to_database() as con:
+        try:
+            usuario_by_id= await get_usuario(con,usuario_id)
+            if usuario_by_id:
+                return jsonify({"success": True, "data": usuario_by_id})
+            else:
+                return jsonify({"error": f"usuario with ID {usuario_id} not found"}), 404
+        except Exception as e :
+            return jsonify({"error":"Data Base erorr {}".format(e)})
+        
+@usuario_fl1.route('/<string:id_usuario_firebase>', methods=['GET'])
+async def get_usuario_by_id_firebase(usuario_id):
     async with connect_to_database() as con:
         try:
             usuario_by_id= await get_usuario(con,usuario_id)

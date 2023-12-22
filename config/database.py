@@ -29,3 +29,4 @@ async def connect_to_database():
         print("Conexión establecida")
     finally:
         connection.close()
+
