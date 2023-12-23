@@ -137,8 +137,16 @@ async def usuario_existe_por_telefono():
                 result = await cursor.fetchone()
                 print(result)
                 existe = result['COUNT(*)'] > 0
+                id_firebase = None
+                if existe:
+                    sql_firebase = "SELECT id_usuario_firebase FROM usuario WHERE num_telefono = %s"
+                    await cursor.execute(sql_firebase, (num_telefono,))
+                    result_firebase = await cursor.fetchone()
+                    id_firebase = result_firebase['id_usuario_firebase'] if result_firebase else None
+                else:
+                    id_firebase="No Existe"
                 print(result['COUNT(*)'])
-            return jsonify({"existe": existe}), 200
+            return jsonify({"existe": existe, "id_firebase": id_firebase}), 200
 
     except Exception as e:
         print(e)
