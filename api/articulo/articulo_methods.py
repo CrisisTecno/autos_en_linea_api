@@ -40,11 +40,91 @@ articulo_fl2 = Blueprint('articulo_post', __name__)
 
 #     except Exception as e:
 #         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+
+
+
 def get_default_expedition_date():
     now = datetime.now()
     timestamp_seconds = datetime.timestamp(now)
     timestamp_milliseconds = int(timestamp_seconds * 1000)
     return timestamp_milliseconds
+
+@articulo_fl2.route('/especificaciones/<string:name_tipo>', methods=['GET'])
+async def get_subespecificaciones_por_tipo(name_tipo):
+    try:
+        async with connect_to_database() as connection:
+            async with connection.cursor() as cursor:
+                await cursor.execute("SELECT id_especificacion FROM especificaciones_adm WHERE tipo = %s", (name_tipo,))
+                id_result = await cursor.fetchone()
+                print(id_result)
+                if id_result:
+                    id_especificacion = id_result['id_especificacion']
+                    print(id_especificacion)
+                    await cursor.execute("SELECT clave, valor FROM subespecificaciones_adm WHERE id_especificacion = %s", (id_especificacion,))
+                    subespecificaciones_raw = await cursor.fetchall()
+                    print(subespecificaciones_raw)
+                    subespecificaciones = {item['clave']: item['valor'] for item in subespecificaciones_raw}
+
+                    respuesta = {
+                        "especificaciones": [
+                            {
+                                "subespecificaciones": subespecificaciones,
+                                "tipo": name_tipo
+                            }
+                        ]
+                    }
+                else:
+                    respuesta = {"error": f"No se encontraron especificaciones para el tipo '{name_tipo}'"}
+                    return jsonify(respuesta)
+
+        return jsonify(respuesta)
+
+
+    except Exception as e:
+        return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+    
+@articulo_fl2.route('/especificaciones', methods=['GET'])
+async def get_tipos_especificaciones():
+    try:
+        async with connect_to_database() as connection:
+            async with connection.cursor() as cursor:
+                await cursor.execute("SELECT tipo FROM especificaciones_adm")
+                tipos_raw  = await cursor.fetchall()
+                if tipos_raw:
+                    tipos = [registro['tipo'] for registro in tipos_raw]
+                print(tipos)
+                return jsonify(tipos)
+    except Exception as e:
+        return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+    
+@articulo_fl2.route('/especificaciones', methods=['POST'])
+async def post_especificaciones():
+    data = request.json
+
+    try:
+        async with connect_to_database() as connection:
+            async with connection.cursor() as cursor:
+                for especificacion in data['especificaciones']:
+                    sql_especificaciones = """INSERT INTO especificaciones_adm (tipo) VALUES (%s)"""
+                    await cursor.execute(sql_especificaciones, (especificacion['tipo'],))
+                    id_especificacion = cursor.lastrowid
+
+                    for clave, valor in especificacion['subespecificaciones'].items():
+                        sql_subespecificaciones = """INSERT INTO subespecificaciones_adm (clave, valor, id_especificacion) VALUES (%s, %s, %s)"""
+                        await cursor.execute(sql_subespecificaciones, (clave, valor, id_especificacion))
+
+                    await connection.commit()
+
+            return jsonify({"success": True, "message": "Especificacion creado exitosamente" ,"id_especificacione": id_especificacion}), 201
+
+
+    except Exception as e:
+        return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+
+    
+
+
+
 
 @articulo_fl2.route('/articulo', methods=['POST'])
 async def crear_articulo():

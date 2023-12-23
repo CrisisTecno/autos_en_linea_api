@@ -65,8 +65,8 @@ async def crear_distribuidor():
                                       ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s,%s, %s)"""
                 valores_distribuidor = (
                     data['gerente'],
-                    data['coordenadas'],
                     data['logo_image'],
+                    data['coordenadas'],
                     data['direccion'],
                     data['nombre'],
                     data['url_paginaWeb'],
@@ -84,6 +84,12 @@ async def crear_distribuidor():
                         sql_distribuidor_sucursal = """INSERT INTO distribuidor_sucursal (id_distribuidor, id_sucursal)
                                                        VALUES (%s, %s)"""
                         await cursor.execute(sql_distribuidor_sucursal, (id_distribuidor, id_sucursal))
+
+                if 'marcas' in data and isinstance(data['marcas'], list):
+                    for marca in data['marcas']:
+                        sql_marca_distribuidor = """INSERT INTO marcas_distribuidor (marca, id_distribuidor)
+                                                    VALUES (%s, %s)"""
+                        await cursor.execute(sql_marca_distribuidor, (marca, id_distribuidor))
 
                 # Insertar horarios de atención del distribuidor
                 for dia, horarios in data['horarioAtencion'].items():

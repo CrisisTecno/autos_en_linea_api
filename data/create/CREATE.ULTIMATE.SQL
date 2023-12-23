@@ -166,6 +166,25 @@ CREATE TABLE subespecificaciones (
     id_especificacion INT,
     FOREIGN KEY (id_especificacion) REFERENCES especificaciones(id_especificacion)
 );
+CREATE TABLE especificaciones_adm (
+    id_especificacion INT AUTO_INCREMENT PRIMARY KEY,
+    tipo VARCHAR(255) UNIQUE
+);
+
+CREATE TABLE marcas_distribuidor(
+    id_marca INT AUTO_INCREMENT PRIMARY KEY,
+    marca VARCHAR(255),
+    id_distribuidor INT,
+    FOREIGN KEY (id_distribuidor) REFERENCES distribuidor(id_distribuidor)
+);
+
+CREATE TABLE subespecificaciones_adm (
+    id_subespecificacion INT AUTO_INCREMENT PRIMARY KEY,
+    clave VARCHAR(255),
+    valor TEXT,
+    id_especificacion INT,
+    FOREIGN KEY (id_especificacion) REFERENCES especificaciones_adm(id_especificacion)
+);
 
 CREATE TABLE horarios_distribuidor (
     id_horario INT AUTO_INCREMENT PRIMARY KEY,

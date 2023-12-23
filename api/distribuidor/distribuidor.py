@@ -58,6 +58,12 @@ async def process_distribuidor(connection):
 
                 distribuidor['horarios_distribuidor'] = horarios_distribuidor
 
+                sql_marcas = "SELECT marca FROM marcas_distribuidor WHERE id_distribuidor = %s"
+                await cursor.execute(sql_marcas, (id_distribuidor,))
+                marcas_raw = await cursor.fetchall()
+                marcas = [marca['marca'] for marca in marcas_raw]  
+
+                distribuidor['marcas'] = marcas
 
             return distribuidores
     finally:
