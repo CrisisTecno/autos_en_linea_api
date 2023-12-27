@@ -21,28 +21,45 @@ async def get_usuario(connection, usuario_id):
     except Exception as e:
         print(f"Error obtaining user info for ID {usuario_id}: {e}")
         return None
+    
+async def get_usuario_by_id_fire(connection, usuario_id):
+    try:
+        async with connection.cursor() as cursor:
+            sql_usuario = """SELECT * FROM usuario WHERE id_usuario_firebase = %s"""
+            await cursor.execute(sql_usuario, (usuario_id,))
+            usuario_info = await cursor.fetchone()
+
+            if usuario_info:
+                for key in ['created', 'lastUpdate']: 
+                    if usuario_info[key]:
+                        usuario_info[key] = int(usuario_info[key].timestamp() * 1000)
+      
+            return usuario_info
+    except Exception as e:
+        print(f"Error obtaining user info for ID {usuario_id}: {e}")
+        return None
 
     
-@usuario_fl1.route('/ids/<int:id_usuario>', methods=['GET'])
-async def get_usuario_by_id(usuario_id):
+@usuario_fl1.route('/<int:id_usuario>', methods=['GET'])
+async def get_usuario_by_id(id_usuario):
     async with connect_to_database() as con:
         try:
-            usuario_by_id= await get_usuario(con,usuario_id)
+            usuario_by_id= await get_usuario(con,id_usuario)
             if usuario_by_id:
                 return jsonify({"success": True, "data": usuario_by_id})
             else:
-                return jsonify({"error": f"usuario with ID {usuario_id} not found"}), 404
+                return jsonify({"error": f"usuario with ID {id_usuario} not found"}), 404
         except Exception as e :
             return jsonify({"error":"Data Base erorr {}".format(e)})
         
-@usuario_fl1.route('/<string:id_usuario_firebase>', methods=['GET'])
-async def get_usuario_by_id_firebase(usuario_id):
+@usuario_fl1.route('/idf/<string:id_usuario_firebase>', methods=['GET'])
+async def get_usuario_by_id_firebase(id_usuario_firebase):
     async with connect_to_database() as con:
         try:
-            usuario_by_id= await get_usuario(con,usuario_id)
+            usuario_by_id= await get_usuario_by_id_fire(con,id_usuario_firebase)
             if usuario_by_id:
                 return jsonify({"success": True, "data": usuario_by_id})
             else:
-                return jsonify({"error": f"usuario with ID {usuario_id} not found"}), 404
+                return jsonify({"error": f"usuario with ID {id_usuario_firebase} not found"}), 404
         except Exception as e :
             return jsonify({"error":"Data Base erorr {}".format(e)})
