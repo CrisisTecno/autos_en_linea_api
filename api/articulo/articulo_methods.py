@@ -131,35 +131,36 @@ async def options_filter():
 @articulo_fl2.route('/filters', methods=['GET'])
 async def buscar_articulos():
     try:
-        ano = request.args.get('ano')
-        categoria = request.args.get('categoria')
-        marca = request.args.get('marca')
-        modelo = request.args.get('modelo')
-        color = request.args.get('color')
+        anos = request.args.getlist('ano')  
+        categorias = request.args.getlist('categoria')
+        marcas = request.args.getlist('marca')
+        modelos = request.args.getlist('modelo')
+        colores = request.args.getlist('color')
+
         consulta = "SELECT * FROM articulo WHERE 1=1"
         parametros = []
-        if ano:
-            consulta += " AND ano = %s"
-            parametros.append(ano)
-        if categoria:
-            consulta += " AND categoria = %s"
-            parametros.append(categoria)
-        if marca:
-            consulta += " AND marca = %s"
-            parametros.append(marca)
-        if modelo:
-            consulta += " AND modelo = %s"
-            parametros.append(modelo)
-        if color:
-            consulta += " AND color = %s"
-            parametros.append(color)
+
+        if anos:
+            consulta += f" AND ano IN ({','.join(['%s'] * len(anos))})"
+            parametros.extend(anos)
+        if categorias:
+            consulta += f" AND categoria IN ({','.join(['%s'] * len(categorias))})"
+            parametros.extend(categorias)
+        if marcas:
+            consulta += f" AND marca IN ({','.join(['%s'] * len(marcas))})"
+            parametros.extend(marcas)
+        if modelos:
+            consulta += f" AND modelo IN ({','.join(['%s'] * len(modelos))})"
+            parametros.extend(modelos)
+        if colores:
+            consulta += f" AND color IN ({','.join(['%s'] * len(colores))})"
+            parametros.extend(colores)
 
         async with connect_to_database() as connection:
             async with connection.cursor() as cursor:
-                await cursor.execute(consulta, tuple(parametros))
+                await cursor.execute(consulta, parametros)
                 resultados = await cursor.fetchall()
                 return jsonify(resultados)
-
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
 
