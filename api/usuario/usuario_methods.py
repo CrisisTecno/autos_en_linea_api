@@ -139,7 +139,7 @@ async def usuario_existe_por_telefono():
                 existe = result['COUNT(*)'] > 0
                 id_usuario = None
                 if existe:
-                    sql_firebase = "SELECT id_usuario FROM usuario WHERE num_telefono = %s"
+                    sql_firebase = "SELECT * FROM usuario WHERE num_telefono = %s"
                     await cursor.execute(sql_firebase, (num_telefono,))
                     result_firebase = await cursor.fetchone()
                     id_usuario = result_firebase['id_usuario'] if result_firebase else None
