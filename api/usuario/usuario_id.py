@@ -23,7 +23,7 @@ async def get_usuario(connection, usuario_id):
         return None
 
     
-@usuario_fl1.route('/<int:id_usuario>', methods=['GET'])
+@usuario_fl1.route('/ids/<int:id_usuario>', methods=['GET'])
 async def get_usuario_by_id(usuario_id):
     async with connect_to_database() as con:
         try:
