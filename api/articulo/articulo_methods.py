@@ -82,7 +82,87 @@ async def get_subespecificaciones_por_tipo(name_tipo):
 
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
-    
+
+
+@articulo_fl2.route('/options', methods=['GET'])
+async def options_filter():
+    try:
+        consulta1 = "SELECT DISTINCT ano FROM articulo ORDER BY ano"
+        consulta2 = "SELECT DISTINCT categoria FROM articulo ORDER BY categoria"
+        consulta3 = "SELECT DISTINCT marca FROM articulo ORDER BY marca"
+        consulta4 = "SELECT DISTINCT modelo FROM articulo ORDER BY modelo"
+        consulta5 = "SELECT DISTINCT color FROM articulo ORDER BY color"
+
+        opciones = {'ano': [], 'categoria': [], 'marca': [], 'modelo': [], 'color': []}
+
+        async with connect_to_database() as connection:
+            async with connection.cursor() as cursor:
+                # Año
+                await cursor.execute(consulta1)
+                resultados = await cursor.fetchall()
+                opciones['ano'] = [ano['ano'] for ano in resultados if ano['ano'] is not None]
+
+                # Categoría
+                await cursor.execute(consulta2)
+                resultados = await cursor.fetchall()
+                opciones['categoria'] = [categoria['categoria'] for categoria in resultados if categoria['categoria'] is not None]
+
+                # Marca
+                await cursor.execute(consulta3)
+                resultados = await cursor.fetchall()
+                opciones['marca'] = [marca['marca'] for marca in resultados if marca['marca'] is not None]
+
+                # Modelo
+                await cursor.execute(consulta4)
+                resultados = await cursor.fetchall()
+                opciones['modelo'] = [modelo['modelo'] for modelo in resultados if modelo['modelo'] is not None]
+
+                # Color
+                await cursor.execute(consulta5)
+                resultados = await cursor.fetchall()
+                opciones['color'] = [color['color'] for color in resultados if color['color'] is not None]
+
+        return jsonify(opciones)           
+
+    except Exception as e:
+        return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+   
+      
+@articulo_fl2.route('/filters', methods=['GET'])
+async def buscar_articulos():
+    try:
+        ano = request.args.get('ano')
+        categoria = request.args.get('categoria')
+        marca = request.args.get('marca')
+        modelo = request.args.get('modelo')
+        color = request.args.get('color')
+        consulta = "SELECT * FROM articulo WHERE 1=1"
+        parametros = []
+        if ano:
+            consulta += " AND ano = %s"
+            parametros.append(ano)
+        if categoria:
+            consulta += " AND categoria = %s"
+            parametros.append(categoria)
+        if marca:
+            consulta += " AND marca = %s"
+            parametros.append(marca)
+        if modelo:
+            consulta += " AND modelo = %s"
+            parametros.append(modelo)
+        if color:
+            consulta += " AND color = %s"
+            parametros.append(color)
+
+        async with connect_to_database() as connection:
+            async with connection.cursor() as cursor:
+                await cursor.execute(consulta, tuple(parametros))
+                resultados = await cursor.fetchall()
+                return jsonify(resultados)
+
+    except Exception as e:
+        return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+
 @articulo_fl2.route('/especificaciones', methods=['GET'])
 async def get_tipos_especificaciones():
     try:

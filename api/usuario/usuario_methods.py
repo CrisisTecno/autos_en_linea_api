@@ -148,8 +148,7 @@ async def usuario_existe_por_telefono():
                     id_usuario="No Existe"
                     return jsonify({"existe": existe, "id_usuario": id_usuario}), 200
                 
-            
-
+        
     except Exception as e:
         print(e)
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
