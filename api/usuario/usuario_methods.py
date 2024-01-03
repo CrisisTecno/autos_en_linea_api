@@ -108,7 +108,7 @@ async def actualizar_usuario(id_usuario):
 #         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
     
 
-@usuario_fl2.route('/usuario/<string:id_usuario>', methods=['DELETE'])
+@usuario_fl2.route('/usuario/<int:id_usuario>', methods=['DELETE'])
 async def eliminar_usuario(id_usuario):
     try:
         async with connect_to_database() as connection:

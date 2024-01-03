@@ -178,10 +178,58 @@ async def get_tipos_especificaciones():
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
     
+@articulo_fl2.route('/subespecificaciones', methods=['GET'])
+async def get_tipos_sub_especificaciones():
+    try:
+        async with connect_to_database() as connection:
+            async with connection.cursor() as cursor:
+                await cursor.execute("SELECT DISTINCT clave FROM subespecificaciones")
+                subespecificaciones_raw = await cursor.fetchall()
+                if subespecificaciones_raw:
+                    subespecificaciones = [registro['clave'] for registro in subespecificaciones_raw]
+                return jsonify({"especificaciones": subespecificaciones})
+    except Exception as e:
+        return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+
+    
+# @articulo_fl2.route('/articulo/<int:id_articulo>', methods=['PUT'])
+# async def actualizar_articulo(id_articulo):
+@articulo_fl2.route('/especificaciones/<int:id_especificacion>', methods=['GET'])
+async def get_tipos_especificaciones_by_id(id_especificacion):
+    try:
+        async with connect_to_database() as connection:
+            async with connection.cursor() as cursor:
+                # Obtener el tipo de la especificación
+                await cursor.execute("SELECT tipo FROM especificaciones_adm WHERE id_especificacion = %s", (id_especificacion,))
+                tipo_raw = await cursor.fetchone()
+                if not tipo_raw:
+                    return jsonify({"error": "Especificación no encontrada"}), 404
+                tipo = tipo_raw['tipo']
+                await cursor.execute("SELECT clave, valor FROM subespecificaciones_adm WHERE id_especificacion = %s", (id_especificacion,))
+                subespecificaciones_raw = await cursor.fetchall()
+                subespecificaciones = {registro['clave']: registro['valor'] for registro in subespecificaciones_raw}
+
+                # Obtener marcas
+                await cursor.execute("SELECT marca FROM marcas_adm WHERE id_especificacion = %s", (id_especificacion,))
+                marcas_raw = await cursor.fetchall()
+                marcas = [registro['marca'] for registro in marcas_raw]
+                respuesta = {
+                    "especificaciones": [
+                        {
+                            "tipo": tipo,
+                            "subespecificaciones": subespecificaciones,
+                            "marcas": marcas
+                        }
+                    ]
+                }
+                return jsonify(respuesta)
+    except Exception as e:
+        return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+
+    
 @articulo_fl2.route('/especificaciones', methods=['POST'])
 async def post_especificaciones():
     data = request.json
-
     try:
         async with connect_to_database() as connection:
             async with connection.cursor() as cursor:
@@ -194,6 +242,10 @@ async def post_especificaciones():
                         sql_subespecificaciones = """INSERT INTO subespecificaciones_adm (clave, valor, id_especificacion) VALUES (%s, %s, %s)"""
                         await cursor.execute(sql_subespecificaciones, (clave, valor, id_especificacion))
 
+                    for marca in especificacion.get('marcas', []):
+                        sql_marcas = """INSERT INTO marcas_adm (marca, id_especificacion) VALUES (%s, %s)"""
+                        await cursor.execute(sql_marcas, (marca, id_especificacion))
+
                     await connection.commit()
 
             return jsonify({"success": True, "message": "Especificacion creado exitosamente" ,"id_especificacione": id_especificacion}), 201
@@ -201,6 +253,29 @@ async def post_especificaciones():
 
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+    
+# @articulo_fl2.route('/especificaciones', methods=['POST'])
+# async def post_especificaciones():
+#     data = request.json
+#     try:
+#         async with connect_to_database() as connection:
+#             async with connection.cursor() as cursor:
+#                 for especificacion in data['especificaciones']:
+#                     sql_especificaciones = """INSERT INTO especificaciones_adm (tipo) VALUES (%s)"""
+#                     await cursor.execute(sql_especificaciones, (especificacion['tipo'],))
+#                     id_especificacion = cursor.lastrowid
+
+#                     for clave, valor in especificacion['subespecificaciones'].items():
+#                         sql_subespecificaciones = """INSERT INTO subespecificaciones_adm (clave, valor, id_especificacion) VALUES (%s, %s, %s)"""
+#                         await cursor.execute(sql_subespecificaciones, (clave, valor, id_especificacion))
+
+#                     await connection.commit()
+
+#             return jsonify({"success": True, "message": "Especificacion creado exitosamente" ,"id_especificacione": id_especificacion}), 201
+
+
+#     except Exception as e:
+#         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
 
     
 
@@ -390,5 +465,25 @@ async def articulo_favorito(id_usuario, id_articulo):
 
             return jsonify({"success": True, "message": "Estado de favorito actualizado exitosamente"}), 200
 
+    except Exception as e:
+        return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+    
+@articulo_fl2.route('/<int:id_articulo>/referencia', methods=['GET'])
+async def articulo_referencia(id_articulo):
+    try:
+        async with connect_to_database() as connection:
+            async with connection.cursor() as cursor:
+                sql = """SELECT s.* FROM sucursal s
+                         INNER JOIN articulo_sucursal a_s ON s.id_sucursal = a_s.id_sucursal
+                         WHERE a_s.id_articulo = %s"""
+                await cursor.execute(sql, (id_articulo,))
+                sucursales_raw = await cursor.fetchall()
+                
+                if not sucursales_raw:
+                    return jsonify({"error": "No se encontraron sucursales para el artículo"}), 404
+
+                sucursales = [dict(sucursal) for sucursal in sucursales_raw]
+
+                return jsonify(sucursales)
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
