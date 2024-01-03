@@ -248,6 +248,7 @@ async def crear_articulo():
                 if 'sucursal_id' in data:
                     sql_articulo_sucursal = """INSERT INTO articulo_sucursal (id_articulo, id_sucursal) VALUES (%s, %s)"""
                     await cursor.execute(sql_articulo_sucursal, (id_articulo, data['sucursal_id']))
+                    
                 if 'especificaciones' in data:
                     for especificacion in data['especificaciones']:
                         sql_especificaciones = """INSERT INTO especificaciones (tipo, id_articulo) VALUES (%s, %s)"""

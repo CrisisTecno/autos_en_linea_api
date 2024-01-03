@@ -170,6 +170,30 @@ CREATE TABLE especificaciones_adm (
     id_especificacion INT AUTO_INCREMENT PRIMARY KEY,
     tipo VARCHAR(255) UNIQUE
 );
+CREATE TABLE subespecificaciones_adm (
+    id_subespecificacion INT AUTO_INCREMENT PRIMARY KEY,
+    clave VARCHAR(255),
+    valor TEXT,
+    id_especificacion INT,
+    FOREIGN KEY (id_especificacion) REFERENCES especificaciones_adm(id_especificacion)
+);
+
+CREATE TABLE marcas_adm(
+    id_marca INT AUTO_INCREMENT PRIMARY KEY,
+    tipo VARCHAR(255)
+);
+CREATE TABLE sub_marcas_adm(
+    id_marca INT AUTO_INCREMENT PRIMARY KEY,
+    marca VARCHAR(255)
+);
+
+CREATE TABLE categoria_adm(
+    id_relacion INT AUTO_INCREMENT  PRIMARY KEY,
+    id_articulo INT,
+    id_sucursal INT,
+    FOREIGN KEY (id_articulo) REFERENCES articulo(id_articulo),
+    FOREIGN KEY (id_distribuidor) REFERENCES distribuidor(id_distribuidor)  
+);
 
 CREATE TABLE marcas_distribuidor(
     id_marca INT AUTO_INCREMENT PRIMARY KEY,
@@ -178,13 +202,7 @@ CREATE TABLE marcas_distribuidor(
     FOREIGN KEY (id_distribuidor) REFERENCES distribuidor(id_distribuidor)
 );
 
-CREATE TABLE subespecificaciones_adm (
-    id_subespecificacion INT AUTO_INCREMENT PRIMARY KEY,
-    clave VARCHAR(255),
-    valor TEXT,
-    id_especificacion INT,
-    FOREIGN KEY (id_especificacion) REFERENCES especificaciones_adm(id_especificacion)
-);
+
 
 CREATE TABLE horarios_distribuidor (
     id_horario INT AUTO_INCREMENT PRIMARY KEY,
