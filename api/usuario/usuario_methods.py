@@ -287,26 +287,26 @@ async def obtener_autos_favoritos_usuario(id_usuario):
         async with connect_to_database() as connection:
             async with connection.cursor() as cursor:
                 sql = """
-    SELECT 
-        articulo.*, 
-        favoritos.enable as favorite,
-        especificaciones.id_especificacion,
-        especificaciones.tipo,
-        images_articulo.url_image,
-        images_articulo.descripcion as img_descripcion
-    FROM 
-        articulo
-    JOIN 
-        favoritos ON articulo.id_articulo = favoritos.id_articulo
-    LEFT JOIN 
-        especificaciones ON articulo.id_articulo = especificaciones.id_articulo
-    LEFT JOIN 
-        images_articulo ON articulo.id_articulo = images_articulo.id_articulo
-    WHERE 
-        favoritos.id_usuario = %s AND favoritos.enable = 1
-    ORDER BY 
-        articulo.id_articulo
-"""
+                    SELECT 
+                        articulo.*, 
+                        favoritos.enable as favorite,
+                        especificaciones.id_especificacion,
+                        especificaciones.tipo,
+                        images_articulo.url_image,
+                        images_articulo.descripcion as img_descripcion
+                    FROM 
+                        articulo
+                    JOIN 
+                        favoritos ON articulo.id_articulo = favoritos.id_articulo
+                    LEFT JOIN 
+                        especificaciones ON articulo.id_articulo = especificaciones.id_articulo
+                    LEFT JOIN 
+                        images_articulo ON articulo.id_articulo = images_articulo.id_articulo
+                    WHERE 
+                        favoritos.enable = 1 AND favoritos.id_usuario = %s 
+                    ORDER BY 
+                        articulo.id_articulo
+                """
                 await cursor.execute(sql, (id_usuario,))
                 autos_favoritos = await cursor.fetchall()
                 if not autos_favoritos:
