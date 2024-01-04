@@ -86,12 +86,41 @@ async def obtener_todos_autos_favoritos_usuario(id_usuario):
                     ON a.id_articulo = fav.id_articulo
                 """
                 await cursor.execute(sql, (id_usuario,))
-                autos = await cursor.fetchall()
+                autos_all = await cursor.fetchall()
 
-                if not autos:
+                if not autos_all:
                     return jsonify({"error": "No se encontraron autos"}), 404
 
-                return jsonify({"success": True, "autos": autos}), 200
+                autos = []
+                for articulo in autos_all:
+                    id_articulo = articulo['id_articulo']
+                    sql_especificaciones = """
+                        SELECT especificaciones.*, subespecificaciones.clave, subespecificaciones.valor
+                        FROM especificaciones
+                        LEFT JOIN subespecificaciones ON especificaciones.id_especificacion = subespecificaciones.id_especificacion
+                        WHERE especificaciones.id_articulo = %s
+                    """
+                    await cursor.execute(sql_especificaciones, (id_articulo,))
+                    especificaciones_raw = await cursor.fetchall()
+                    
+                    especificaciones = {}
+                    for esp in especificaciones_raw:
+                        id_esp = esp['id_especificacion']
+                        if id_esp not in especificaciones:
+                            especificaciones[id_esp] = {'tipo': esp['tipo'], 'subespecificaciones': {}}
+                        especificaciones[id_esp]['subespecificaciones'][esp['clave']] = esp['valor']
+                    sql_imagenes = """
+                        SELECT url_image, descripcion
+                        FROM images_articulo
+                        WHERE id_articulo = %s
+                    """
+                    await cursor.execute(sql_imagenes, (id_articulo,))
+                    imagenes = await cursor.fetchall()
+                    articulo['especificaciones'] = list(especificaciones.values())
+                    articulo['imagenes'] = imagenes
+                    autos.append(articulo)
+
+                return jsonify({"success": True, "autos_favoritos": autos}), 200
 
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
