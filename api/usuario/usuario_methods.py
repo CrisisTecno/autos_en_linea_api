@@ -281,66 +281,127 @@ async def usuario_existe_por_telefono():
 #     except Exception as e:
 #         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
     
+# @usuario_fl2.route('/<int:id_usuario>/favoritos', methods=['GET'])
+# async def obtener_autos_favoritos_usuario(id_usuario): 
+#     try:
+#         async with connect_to_database() as connection:
+#             async with connection.cursor() as cursor:
+#                 sql = """
+#                     SELECT 
+#                         articulo.*, 
+#                         favoritos.enable as favorite,
+#                         especificaciones.id_especificacion,
+#                         especificaciones.tipo,
+#                         images_articulo.url_image,
+#                         images_articulo.descripcion as img_descripcion
+#                     FROM 
+#                         articulo
+#                     JOIN 
+#                         favoritos ON articulo.id_articulo = favoritos.id_articulo
+#                     LEFT JOIN 
+#                         especificaciones ON articulo.id_articulo = especificaciones.id_articulo
+#                     LEFT JOIN 
+#                         images_articulo ON articulo.id_articulo = images_articulo.id_articulo
+#                     WHERE 
+#                         favoritos.enable = 1 AND favoritos.id_usuario = %s 
+#                     ORDER BY 
+#                         articulo.id_articulo
+#                 """
+#                 await cursor.execute(sql, (id_usuario,))
+#                 autos_favoritos = await cursor.fetchall()
+#                 if not autos_favoritos:
+#                     return jsonify({"error": f"No se encontraron autos favoritos para el usuario con ID {id_usuario}"}), 404
+#                 articulos_dict = {}
+#                 processed_especificaciones = set()
+#                 for row in autos_favoritos:
+#                     id_articulo = row['id_articulo']
+#                     id_especificacion = row.get('id_especificacion')
+#                     if id_articulo not in articulos_dict:
+#                         articulos_dict[id_articulo] = row
+#                         articulos_dict[id_articulo]['especificaciones'] = []
+#                         articulos_dict[id_articulo]['imagenes'] = []
+#                     if id_especificacion and id_especificacion not in processed_especificaciones:
+#                         processed_especificaciones.add(id_especificacion)
+#                         sql_subespecificaciones = """
+#                             SELECT * FROM subespecificaciones
+#                             WHERE id_especificacion = %s
+#                         """
+#                         await cursor.execute(sql_subespecificaciones, (id_especificacion,))
+#                         subespecificaciones_raw = await cursor.fetchall()
+
+#                         subespecificaciones = {sub['clave']: sub['valor'] for sub in subespecificaciones_raw}
+#                         especificacion = {
+#                             'tipo': row['tipo'],
+#                             'subespecificaciones': subespecificaciones
+#                         }
+#                         articulos_dict[id_articulo]['especificaciones'].append(especificacion)
+
+#                 articulos_favoritos = list(articulos_dict.values())
+#                 return jsonify({"success": True, "autos_favoritos": articulos_favoritos}), 200
+
+#     except Exception as e:
+#         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+
 @usuario_fl2.route('/<int:id_usuario>/favoritos', methods=['GET'])
 async def obtener_autos_favoritos_usuario(id_usuario): 
     try:
         async with connect_to_database() as connection:
             async with connection.cursor() as cursor:
+                # Obtener todos los artículos favoritos
                 sql = """
                     SELECT 
                         articulo.*, 
-                        favoritos.enable as favorite,
-                        especificaciones.id_especificacion,
-                        especificaciones.tipo,
-                        images_articulo.url_image,
-                        images_articulo.descripcion as img_descripcion
+                        favoritos.enable as favorite
                     FROM 
                         articulo
                     JOIN 
                         favoritos ON articulo.id_articulo = favoritos.id_articulo
-                    LEFT JOIN 
-                        especificaciones ON articulo.id_articulo = especificaciones.id_articulo
-                    LEFT JOIN 
-                        images_articulo ON articulo.id_articulo = images_articulo.id_articulo
                     WHERE 
                         favoritos.enable = 1 AND favoritos.id_usuario = %s 
                     ORDER BY 
                         articulo.id_articulo
                 """
                 await cursor.execute(sql, (id_usuario,))
-                autos_favoritos = await cursor.fetchall()
-                if not autos_favoritos:
+                articulos_raw = await cursor.fetchall()
+                if not articulos_raw:
                     return jsonify({"error": f"No se encontraron autos favoritos para el usuario con ID {id_usuario}"}), 404
+                
+                # Procesar cada artículo
+                articulos_favoritos = []
+                for articulo in articulos_raw:
+                    id_articulo = articulo['id_articulo']
+                    # Obtener especificaciones para el artículo
+                    sql_especificaciones = """
+                        SELECT especificaciones.*, subespecificaciones.clave, subespecificaciones.valor
+                        FROM especificaciones
+                        LEFT JOIN subespecificaciones ON especificaciones.id_especificacion = subespecificaciones.id_especificacion
+                        WHERE especificaciones.id_articulo = %s
+                    """
+                    await cursor.execute(sql_especificaciones, (id_articulo,))
+                    especificaciones_raw = await cursor.fetchall()
+                    
+                    # Agrupar subespecificaciones por especificación
+                    especificaciones = {}
+                    for esp in especificaciones_raw:
+                        id_esp = esp['id_especificacion']
+                        if id_esp not in especificaciones:
+                            especificaciones[id_esp] = {'tipo': esp['tipo'], 'subespecificaciones': {}}
+                        especificaciones[id_esp]['subespecificaciones'][esp['clave']] = esp['valor']
 
-                articulos_dict = {}
-                processed_especificaciones = set()
-                for row in autos_favoritos:
-                    id_articulo = row['id_articulo']
-                    id_especificacion = row.get('id_especificacion')
+                    # Obtener imágenes para el artículo
+                    sql_imagenes = """
+                        SELECT url_image, descripcion
+                        FROM images_articulo
+                        WHERE id_articulo = %s
+                    """
+                    await cursor.execute(sql_imagenes, (id_articulo,))
+                    imagenes = await cursor.fetchall()
 
-                    if id_articulo not in articulos_dict:
-                        articulos_dict[id_articulo] = row
-                        articulos_dict[id_articulo]['especificaciones'] = []
-                        articulos_dict[id_articulo]['imagenes'] = []
+                    # Agregar datos al artículo
+                    articulo['especificaciones'] = list(especificaciones.values())
+                    articulo['imagenes'] = imagenes
+                    articulos_favoritos.append(articulo)
 
-                    if id_especificacion and id_especificacion not in processed_especificaciones:
-                        processed_especificaciones.add(id_especificacion)
-
-                        sql_subespecificaciones = """
-                            SELECT * FROM subespecificaciones
-                            WHERE id_especificacion = %s
-                        """
-                        await cursor.execute(sql_subespecificaciones, (id_especificacion,))
-                        subespecificaciones_raw = await cursor.fetchall()
-
-                        subespecificaciones = {sub['clave']: sub['valor'] for sub in subespecificaciones_raw}
-                        especificacion = {
-                            'tipo': row['tipo'],
-                            'subespecificaciones': subespecificaciones
-                        }
-                        articulos_dict[id_articulo]['especificaciones'].append(especificacion)
-
-                articulos_favoritos = list(articulos_dict.values())
                 return jsonify({"success": True, "autos_favoritos": articulos_favoritos}), 200
 
     except Exception as e:

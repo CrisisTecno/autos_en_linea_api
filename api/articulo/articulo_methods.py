@@ -76,10 +76,7 @@ async def get_subespecificaciones_por_tipo(name_tipo):
                 else:
                     respuesta = {"error": f"No se encontraron especificaciones para el tipo '{name_tipo}'"}
                     return jsonify(respuesta)
-
         return jsonify(respuesta)
-
-
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
 
@@ -440,7 +437,23 @@ async def eliminar_articulo(id_articulo):
 
 # @articulo_fl2.route('/<str:id_usuario>/<int:id_articulo>', methods=['POST'])
 # async def aritulo_favorito(id_articulo,id_usuario):
-
+# {
+#   "especificaciones": [
+#     "Motor":"motor1",
+#     "Motor":"motor2",
+#     "Motor":"algunmotor",
+#     "Potencia",
+#     "Asientos",
+#     "Interior",
+#     "Transmisión",
+#     "Tracción",
+#     "Capacidad de carga",
+#     "Altura del suelo",
+#     "esecificaion1",
+#     "esecificaion2",
+#     "Software"
+#   ]
+# }
 @articulo_fl2.route('/<int:id_articulo>/<int:id_usuario>', methods=['POST'])
 async def articulo_favorito(id_usuario, id_articulo):
     try:
@@ -462,9 +475,7 @@ async def articulo_favorito(id_usuario, id_articulo):
                     await cursor.execute(sql_insert, (id_usuario, id_articulo, fecha_agregado, True))
 
                 await connection.commit()
-
             return jsonify({"success": True, "message": "Estado de favorito actualizado exitosamente"}), 200
-
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
     
