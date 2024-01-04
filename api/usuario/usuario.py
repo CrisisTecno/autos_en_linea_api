@@ -24,27 +24,77 @@ async def process_usuario(connection):
     finally:
         connection.close()
 
-@usuario_fl2.route('/favoritos/<string:id_usuario>', methods=['GET'])
+# @usuario_fl2.route('/favoritos/<int:id_usuario>', methods=['GET'])
+# async def obtener_todos_autos_favoritos_usuario(id_usuario): 
+#     try:
+#         async with connect_to_database() as connection:
+#             async with connection.cursor() as cursor:
+#                 sql = """
+#                     SELECT articulo.*, favoritos.enable as favorite FROM articulo
+#                     JOIN favoritos ON articulo.id_articulo = favoritos.id_articulo
+#                 """
+#                 await cursor.execute(sql)
+#                 autos_favoritos = await cursor.fetchall()
+#                 if not autos_favoritos:
+#                     return jsonify({"error": f"No se encontraron autos favoritos para el usuario con ID {id_usuario}"}), 404
+
+#                 return jsonify({"success": True, "autos_favoritos": autos_favoritos}), 200
+
+#     except Exception as e:
+#         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+    
+# @usuario_fl2.route('/favoritos/<int:id_usuario>', methods=['GET'])
+# async def obtener_todos_autos_favoritos_usuario(id_usuario): 
+#     try:
+#         async with connect_to_database() as connection:
+#             async with connection.cursor() as cursor:
+#                 # Consultar todos los artículos y marcar los favoritos
+#                 sql = """
+#                     SELECT 
+#                         articulo.*, 
+#                         CASE WHEN fav.id_usuario IS NOT NULL THEN 1 ELSE 0 END as favorite
+#                     FROM 
+#                         articulo
+#                     LEFT JOIN 
+#                         (SELECT * FROM favoritos WHERE id_usuario = %s) as fav 
+#                     ON articulo.id_articulo = fav.id_articulo
+#                 """
+#                 await cursor.execute(sql, (id_usuario,))
+#                 autos = await cursor.fetchall()
+
+#                 if not autos:
+#                     return jsonify({"error": "No se encontraron autos"}), 404
+
+#                 return jsonify({"success": True, "autos": autos}), 200
+
+#     except Exception as e:
+#         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+@usuario_fl2.route('/favoritos/<int:id_usuario>', methods=['GET'])
 async def obtener_todos_autos_favoritos_usuario(id_usuario): 
     try:
         async with connect_to_database() as connection:
             async with connection.cursor() as cursor:
+                # Consultar todos los artículos y marcar los que son favoritos
                 sql = """
-                    SELECT articulo.*, favoritos.enable as favorite FROM articulo
-                    JOIN favoritos ON articulo.id_articulo = favoritos.id_articulo
+                    SELECT 
+                        a.*, 
+                        CASE WHEN fav.id_articulo IS NOT NULL THEN 1 ELSE 0 END as favorite
+                    FROM 
+                        articulo a
+                    LEFT JOIN 
+                        (SELECT id_articulo FROM favoritos WHERE id_usuario = %s AND enable = 1) as fav 
+                    ON a.id_articulo = fav.id_articulo
                 """
-                await cursor.execute(sql)
-                autos_favoritos = await cursor.fetchall()
-                if not autos_favoritos:
-                    return jsonify({"error": f"No se encontraron autos favoritos para el usuario con ID {id_usuario}"}), 404
+                await cursor.execute(sql, (id_usuario,))
+                autos = await cursor.fetchall()
 
+                if not autos:
+                    return jsonify({"error": "No se encontraron autos"}), 404
 
-
-                return jsonify({"success": True, "autos_favoritos": autos_favoritos}), 200
+                return jsonify({"success": True, "autos": autos}), 200
 
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
-    
 
     
 @usuario_fl.route('/', methods=['GET'])
