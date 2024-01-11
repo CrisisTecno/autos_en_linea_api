@@ -5,9 +5,9 @@ from config.database import connect_to_database
 usuario_fl2 = Blueprint('usuario_post', __name__)
 
 @usuario_fl2.route('/usuario', methods=['POST'])
-async def crear_usuario():
+def crear_usuario():
     try:
-        async with connect_to_database() as connection:
+        with connect_to_database() as connection:
             data = request.json
             campos_requeridos = [
                                  'rol', 'nombres', 'apellidos',
@@ -16,12 +16,12 @@ async def crear_usuario():
             if not all(campo in data for campo in campos_requeridos):
                 return jsonify({"error": "Faltan campos requeridos"}), 400
                 
-            async with connection.cursor() as cursor:
+            with connection.cursor() as cursor:
                 sql = """INSERT INTO usuario (
                              rol, nombres, apellidos, 
                              correo_electronico, num_telefono, url_logo, 
                              coordenadas, id_sucursal, id_distribuidor, created, lastUpdate, id_usuario_firebase
-                         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, %s)"""
+                         ) VALUES (, , , , , , , , , CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, )"""
                 valores = (
                     data['rol'],
                     data['nombres'],
@@ -34,8 +34,8 @@ async def crear_usuario():
                     data.get('id_distribuidor'),
                     data.get('id_usuario_firebase','')
                 )
-                await cursor.execute(sql, valores)
-                await connection.commit()
+                cursor.execute(sql, valores)
+                connection.commit()
 
             return jsonify({"success": True, "message": "Usuario creado exitosamente"}), 201
 
@@ -43,9 +43,9 @@ async def crear_usuario():
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
     
 @usuario_fl2.route('/usuario/<int:id_usuario>', methods=['PUT'])
-async def actualizar_usuario(id_usuario):
+def actualizar_usuario(id_usuario):
     try:
-        async with connect_to_database() as connection:
+        with connect_to_database() as connection:
             data = request.json
             campos_permitidos = ['rol', 'nombres', 'apellidos', 'correo_electronico',
                                  'num_telefono', 'url_logo', 'coordenadas', 
@@ -55,7 +55,7 @@ async def actualizar_usuario(id_usuario):
             valores = []
             for campo in campos_permitidos:
                 if campo in data:
-                    cambios.append(f"{campo} = %s")
+                    cambios.append(f"{campo} = ")
                     valores.append(data[campo])
 
             if not cambios:
@@ -63,12 +63,12 @@ async def actualizar_usuario(id_usuario):
 
             cambios.append("lastUpdate = CURRENT_TIMESTAMP")
             
-            sql_update = "UPDATE usuario SET " + ", ".join(cambios) + " WHERE id_usuario = %s"
+            sql_update = "UPDATE usuario SET " + ", ".join(cambios) + " WHERE id_usuario = "
             valores.append(id_usuario)
             
-            async with connection.cursor() as cursor:
-                await cursor.execute(sql_update, valores)
-                await connection.commit()
+            with connection.cursor() as cursor:
+                cursor.execute(sql_update, valores)
+                connection.commit()
 
             return jsonify({"success": True, "message": f"Usuario con ID {id_usuario} actualizado exitosamente"}), 200
 
@@ -76,9 +76,9 @@ async def actualizar_usuario(id_usuario):
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
     
 # @usuario_fl2.route('/usuario/<string:id_usuario>', methods=['PUT'])
-# async def actualizar_usuario(id_usuario):
+# def actualizar_usuario(id_usuario):
 #     try:
-#         async with connect_to_database() as connection:
+#         with connect_to_database() as connection:
 #             data = request.json
 #             campos_permitidos = ['rol', 'nombres', 'apellidos', 'correo_electronico',
 #                                  'num_telefono', 'url_logo', 'coordenadas', 'id_sucursal', 'id_distribuidor']
@@ -86,21 +86,21 @@ async def actualizar_usuario(id_usuario):
 #             if not any(campo in data for campo in campos_permitidos):
 #                 return jsonify({"error": "Se requiere al menos un campo para actualizar"}), 400
                 
-#             async with connection.cursor() as cursor:
+#             with connection.cursor() as cursor:
 #                 sql_update = "UPDATE usuario SET "
 #                 valores = []
 
 #                 for campo in campos_permitidos:
 #                     if campo in data:
-#                         sql_update += f"{campo} = %s, "
+#                         sql_update += f"{campo} = , "
 #                         valores.append(data[campo])
 
 #                 sql_update = sql_update.rstrip(', ')
-#                 sql_update += " WHERE id_usuario = %s"
+#                 sql_update += " WHERE id_usuario = "
 #                 valores.append(id_usuario)
                 
-#                 await cursor.execute(sql_update, valores)
-#                 await connection.commit()
+#                 cursor.execute(sql_update, valores)
+#                 connection.commit()
 
 #             return jsonify({"success": True, "message": f"Usuario con ID {id_usuario} actualizado exitosamente"}), 200
 
@@ -109,13 +109,13 @@ async def actualizar_usuario(id_usuario):
     
 
 @usuario_fl2.route('/usuario/<int:id_usuario>', methods=['DELETE'])
-async def eliminar_usuario(id_usuario):
+def eliminar_usuario(id_usuario):
     try:
-        async with connect_to_database() as connection:
-            async with connection.cursor() as cursor:
-                sql_delete = "DELETE FROM usuario WHERE id_usuario = %s"
-                await cursor.execute(sql_delete, (id_usuario,))
-                await connection.commit()
+        with connect_to_database() as connection:
+            with connection.cursor() as cursor:
+                sql_delete = "DELETE FROM usuario WHERE id_usuario = "
+                cursor.execute(sql_delete, (id_usuario,))
+                connection.commit()
 
             return jsonify({"success": True, "message": f"Usuario con ID {id_usuario} eliminado exitosamente"}), 200
 
@@ -124,24 +124,24 @@ async def eliminar_usuario(id_usuario):
 
 
 @usuario_fl2.route('/usuario_existe', methods=['GET'])
-async def usuario_existe_por_telefono():
+def usuario_existe_por_telefono():
     num_telefono = request.args.get('num_telefono')
     if not num_telefono:
         return jsonify({"error": "Número de teléfono requerido"}), 400
     try:
-        async with connect_to_database() as connection:
-            async with connection.cursor() as cursor:
+        with connect_to_database() as connection:
+            with connection.cursor() as cursor:
                 print(num_telefono)
-                sql = "SELECT COUNT(*) FROM usuario WHERE num_telefono = %s"
-                await cursor.execute(sql, (num_telefono,))
-                result = await cursor.fetchone()
+                sql = "SELECT COUNT(*) FROM usuario WHERE num_telefono = "
+                cursor.execute(sql, (num_telefono,))
+                result = cursor.fetchone()
                 print(result)
                 existe = result['COUNT(*)'] > 0
                 id_usuario = None
                 if existe:
-                    sql_firebase = "SELECT * FROM usuario WHERE num_telefono = %s"
-                    await cursor.execute(sql_firebase, (num_telefono,))
-                    result_firebase = await cursor.fetchone()
+                    sql_firebase = "SELECT * FROM usuario WHERE num_telefono = "
+                    cursor.execute(sql_firebase, (num_telefono,))
+                    result_firebase = cursor.fetchone()
                     id_usuario = result_firebase['id_usuario'] if result_firebase else None
                     return jsonify({"existe": existe, "data": result_firebase}), 200
                 else:
@@ -155,10 +155,10 @@ async def usuario_existe_por_telefono():
 
 
 # @usuario_fl2.route('/<string:id_usuario>/favoritos', methods=['GET'])
-# async def obtener_autos_favoritos_usuario(id_usuario): 
+# def obtener_autos_favoritos_usuario(id_usuario): 
 #     try:
-#         async with connect_to_database() as connection:
-#             async with connection.cursor() as cursor:
+#         with connect_to_database() as connection:
+#             with connection.cursor() as cursor:
 #                 sql = """
 #                     SELECT 
 #                         articulo.*, 
@@ -176,12 +176,12 @@ async def usuario_existe_por_telefono():
 #                     LEFT JOIN 
 #                         images_articulo ON articulo.id_articulo = images_articulo.id_articulo
 #                     WHERE 
-#                         favoritos.id_usuario = %s
+#                         favoritos.id_usuario = 
 #                     ORDER BY 
 #                         articulo.id_articulo
 #                 """
-#                 await cursor.execute(sql, (id_usuario,))
-#                 autos_favoritos = await cursor.fetchall()
+#                 cursor.execute(sql, (id_usuario,))
+#                 autos_favoritos = cursor.fetchall()
 #                 if not autos_favoritos:
 #                     return jsonify({"error": f"No se encontraron autos favoritos para el usuario con ID {id_usuario}"}), 404
 
@@ -198,10 +198,10 @@ async def usuario_existe_por_telefono():
 
 #                         sql_subespecificaciones = """
 #                             SELECT * FROM subespecificaciones
-#                             WHERE id_especificacion = %s
+#                             WHERE id_especificacion = 
 #                         """
-#                         await cursor.execute(sql_subespecificaciones, (id_especificacion,))
-#                         subespecificaciones_raw = await cursor.fetchall()
+#                         cursor.execute(sql_subespecificaciones, (id_especificacion,))
+#                         subespecificaciones_raw = cursor.fetchall()
 #                         print(subespecificaciones_raw)
 #                         subespecificaciones = {sub['clave']: sub['valor'] for sub in subespecificaciones_raw}
 #                         especificacion = {
@@ -217,10 +217,10 @@ async def usuario_existe_por_telefono():
     
 
 # @usuario_fl2.route('/<string:id_usuario>/favoritos', methods=['GET'])
-# async def obtener_autos_favoritos_usuario_firebase(id_usuario): 
+# def obtener_autos_favoritos_usuario_firebase(id_usuario): 
 #     try:
-#         async with connect_to_database() as connection:
-#             async with connection.cursor() as cursor:
+#         with connect_to_database() as connection:
+#             with connection.cursor() as cursor:
 #                 sql = """
 #                     SELECT 
 #                         articulo.*, 
@@ -238,12 +238,12 @@ async def usuario_existe_por_telefono():
 #                     LEFT JOIN 
 #                         images_articulo ON articulo.id_articulo = images_articulo.id_articulo
 #                     WHERE 
-#                         favoritos.id_usuario = %s
+#                         favoritos.id_usuario = 
 #                     ORDER BY 
 #                         articulo.id_articulo
 #                 """
-#                 await cursor.execute(sql, (id_usuario,))
-#                 autos_favoritos = await cursor.fetchall()
+#                 cursor.execute(sql, (id_usuario,))
+#                 autos_favoritos = cursor.fetchall()
 #                 if not autos_favoritos:
 #                     return jsonify({"error": f"No se encontraron autos favoritos para el usuario con ID {id_usuario}"}), 404
 
@@ -263,10 +263,10 @@ async def usuario_existe_por_telefono():
 
 #                         sql_subespecificaciones = """
 #                             SELECT * FROM subespecificaciones
-#                             WHERE id_especificacion = %s
+#                             WHERE id_especificacion = 
 #                         """
-#                         await cursor.execute(sql_subespecificaciones, (id_especificacion,))
-#                         subespecificaciones_raw = await cursor.fetchall()
+#                         cursor.execute(sql_subespecificaciones, (id_especificacion,))
+#                         subespecificaciones_raw = cursor.fetchall()
 
 #                         subespecificaciones = {sub['clave']: sub['valor'] for sub in subespecificaciones_raw}
 #                         especificacion = {
@@ -282,10 +282,10 @@ async def usuario_existe_por_telefono():
 #         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
     
 # @usuario_fl2.route('/<int:id_usuario>/favoritos', methods=['GET'])
-# async def obtener_autos_favoritos_usuario(id_usuario): 
+# def obtener_autos_favoritos_usuario(id_usuario): 
 #     try:
-#         async with connect_to_database() as connection:
-#             async with connection.cursor() as cursor:
+#         with connect_to_database() as connection:
+#             with connection.cursor() as cursor:
 #                 sql = """
 #                     SELECT 
 #                         articulo.*, 
@@ -303,12 +303,12 @@ async def usuario_existe_por_telefono():
 #                     LEFT JOIN 
 #                         images_articulo ON articulo.id_articulo = images_articulo.id_articulo
 #                     WHERE 
-#                         favoritos.enable = 1 AND favoritos.id_usuario = %s 
+#                         favoritos.enable = 1 AND favoritos.id_usuario =  
 #                     ORDER BY 
 #                         articulo.id_articulo
 #                 """
-#                 await cursor.execute(sql, (id_usuario,))
-#                 autos_favoritos = await cursor.fetchall()
+#                 cursor.execute(sql, (id_usuario,))
+#                 autos_favoritos = cursor.fetchall()
 #                 if not autos_favoritos:
 #                     return jsonify({"error": f"No se encontraron autos favoritos para el usuario con ID {id_usuario}"}), 404
 #                 articulos_dict = {}
@@ -324,10 +324,10 @@ async def usuario_existe_por_telefono():
 #                         processed_especificaciones.add(id_especificacion)
 #                         sql_subespecificaciones = """
 #                             SELECT * FROM subespecificaciones
-#                             WHERE id_especificacion = %s
+#                             WHERE id_especificacion = 
 #                         """
-#                         await cursor.execute(sql_subespecificaciones, (id_especificacion,))
-#                         subespecificaciones_raw = await cursor.fetchall()
+#                         cursor.execute(sql_subespecificaciones, (id_especificacion,))
+#                         subespecificaciones_raw = cursor.fetchall()
 
 #                         subespecificaciones = {sub['clave']: sub['valor'] for sub in subespecificaciones_raw}
 #                         especificacion = {
@@ -343,10 +343,10 @@ async def usuario_existe_por_telefono():
 #         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
 
 @usuario_fl2.route('/<int:id_usuario>/favoritos', methods=['GET'])
-async def obtener_autos_favoritos_usuario(id_usuario): 
+def obtener_autos_favoritos_usuario(id_usuario): 
     try:
-        async with connect_to_database() as connection:
-            async with connection.cursor() as cursor:
+        with connect_to_database() as connection:
+            with connection.cursor() as cursor:
                 # Obtener todos los artículos favoritos
                 sql = """
                     SELECT 
@@ -357,12 +357,12 @@ async def obtener_autos_favoritos_usuario(id_usuario):
                     JOIN 
                         favoritos ON articulo.id_articulo = favoritos.id_articulo
                     WHERE 
-                        favoritos.enable = 1 AND favoritos.id_usuario = %s 
+                        favoritos.enable = 1 AND favoritos.id_usuario =  
                     ORDER BY 
                         articulo.id_articulo
                 """
-                await cursor.execute(sql, (id_usuario,))
-                articulos_raw = await cursor.fetchall()
+                cursor.execute(sql, (id_usuario,))
+                articulos_raw = cursor.fetchall()
                 if not articulos_raw:
                     return jsonify({"error": f"No se encontraron autos favoritos para el usuario con ID {id_usuario}"}), 404
                 
@@ -375,10 +375,10 @@ async def obtener_autos_favoritos_usuario(id_usuario):
                         SELECT especificaciones.*, subespecificaciones.clave, subespecificaciones.valor
                         FROM especificaciones
                         LEFT JOIN subespecificaciones ON especificaciones.id_especificacion = subespecificaciones.id_especificacion
-                        WHERE especificaciones.id_articulo = %s
+                        WHERE especificaciones.id_articulo = 
                     """
-                    await cursor.execute(sql_especificaciones, (id_articulo,))
-                    especificaciones_raw = await cursor.fetchall()
+                    cursor.execute(sql_especificaciones, (id_articulo,))
+                    especificaciones_raw = cursor.fetchall()
                     
                     # Agrupar subespecificaciones por especificación
                     especificaciones = {}
@@ -392,10 +392,10 @@ async def obtener_autos_favoritos_usuario(id_usuario):
                     sql_imagenes = """
                         SELECT url_image, descripcion
                         FROM images_articulo
-                        WHERE id_articulo = %s
+                        WHERE id_articulo = 
                     """
-                    await cursor.execute(sql_imagenes, (id_articulo,))
-                    imagenes = await cursor.fetchall()
+                    cursor.execute(sql_imagenes, (id_articulo,))
+                    imagenes = cursor.fetchall()
 
                     # Agregar datos al artículo
                     articulo['especificaciones'] = list(especificaciones.values())

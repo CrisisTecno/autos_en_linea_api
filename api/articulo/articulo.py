@@ -12,20 +12,21 @@ articulo_fl.register_blueprint(articulo_fl1,)
 articulo_fl.register_blueprint(articulo_fl2,)
 articulo_fl.register_blueprint(articulo_fl3,)
 
-async def get_articulos(connection):
+def get_articulos(connection):
     try:
-        async with connection.cursor() as cursor:
+        with connection.cursor() as cursor:
             sql_articulo =  """
-        SELECT a.*, 
-               e.id_especificacion, e.tipo, 
-               img.url_image, img.descripcion as img_descripcion
-        FROM articulo a
-        LEFT JOIN especificaciones e ON a.id_articulo = e.id_articulo
-        LEFT JOIN images_articulo img ON a.id_articulo = img.id_articulo
-        ORDER BY a.id_articulo
-    """
-            await cursor.execute(sql_articulo)
-            raw_results = await cursor.fetchall()
+            SELECT a.*, 
+                e.id_especificacion, e.tipo, 
+                img.url_image, img.descripcion as img_descripcion
+            FROM articulo a
+            LEFT JOIN especificaciones e ON a.id_articulo = e.id_articulo
+            LEFT JOIN images_articulo img ON a.id_articulo = img.id_articulo
+            ORDER BY a.id_articulo
+        """
+            cursor.execute(sql_articulo)
+            raw_results = cursor.fetchall()
+            print(raw_results)
             articulo_results = {}
             processed_especificaciones = set()
             for row in raw_results:
@@ -59,8 +60,8 @@ async def get_articulos(connection):
                         SELECT * FROM subespecificaciones
                         WHERE id_especificacion = %s
                     """
-                    await cursor.execute(sql_subespecificaciones, (id_especificacion,))
-                    subespecificaciones_raw = await cursor.fetchall()
+                    cursor.execute(sql_subespecificaciones, (id_especificacion,))
+                    subespecificaciones_raw = cursor.fetchall()
 
                     subespecificaciones = {sub['clave']: sub['valor'] for sub in subespecificaciones_raw}
                     especificacion = {
@@ -73,34 +74,34 @@ async def get_articulos(connection):
                 descripcion = row.get('descripcion')
                 if url_image and not any(img['url_image'] == url_image for img in articulo_results[id_articulo]['imagenes']):
                     imagen = {
-                        'url_image': url_image,
-                        'descripcion': descripcion,
+                            'url_image': url_image,
+                            'descripcion': descripcion,
                     }
                     articulo_results[id_articulo]['imagenes'].append(imagen)
 
                 sql_sucursales = """
-                        SELECT id_sucursal FROM articulo_sucursal
-                        WHERE id_articulo = %s
-                    """
-                await cursor.execute(sql_sucursales, (id_articulo,))
-                sucursales = await cursor.fetchall()
+                            SELECT id_sucursal FROM articulo_sucursal
+                            WHERE id_articulo = %s
+                        """
+                cursor.execute(sql_sucursales, (id_articulo,))
+                sucursales = cursor.fetchall()
                 id_sucursales = [sucursal['id_sucursal'] for sucursal in sucursales]
                 articulo_results[id_articulo]['id_sucursales'] = id_sucursales
-                
-            return list(articulo_results.values())
-    finally:
-        connection.close()
+                    
+                return list(articulo_results.values())
+    except Exception as ex:
+        print("Error durante la ejecución de la consulta:", ex)
 
 
     
 @articulo_fl.route('/', methods=['GET'])
-async def get_articulos_all():
-    async with connect_to_database() as connection:
-        try:
-            # Obtener información de los pedidos del proveedor
-            articulo = await get_articulos(connection)
+def get_articulos_all():
+    try:
+        with connect_to_database() as connection:
+            print(connection)
+            articulo = get_articulos(connection)
             return jsonify({"success": True, "data": articulo})
-        except Exception as e:
-            return jsonify({"error": "Database error: {}".format(e)}), 500
+    except Exception as e:
+        return jsonify({"error": "Database error: {}".format(e)}), 500
         
 

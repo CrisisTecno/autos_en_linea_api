@@ -5,12 +5,12 @@ from utils.time import timedelta_to_string,timedelta_to_milliseconds
 distribuidor_fl1=Blueprint('distribuidor_id', __name__)
 
 
-async def process_distribuidor_por_id(connection, id_distribuidor):
+def process_distribuidor_por_id(connection, id_distribuidor):
     try:
-        async with connection.cursor() as cursor:
-            sql_distribuidor = "SELECT * FROM distribuidor WHERE id_distribuidor = %s"
-            await cursor.execute(sql_distribuidor, (id_distribuidor,))
-            distribuidor = await cursor.fetchone()
+        with connection.cursor() as cursor:
+            sql_distribuidor = "SELECT * FROM distribuidor WHERE id_distribuidor = ?"
+            cursor.execute(sql_distribuidor, (id_distribuidor,))
+            distribuidor = cursor.fetchone()
             if distribuidor:
                 for key in ['created', 'lastUpdate']:
                     if distribuidor[key]:
@@ -19,10 +19,10 @@ async def process_distribuidor_por_id(connection, id_distribuidor):
                 sql_sucursales = """
                     SELECT s.* FROM sucursal s
                     JOIN distribuidor_sucursal ds ON s.id_sucursal = ds.id_sucursal
-                    WHERE ds.id_distribuidor = %s
+                    WHERE ds.id_distribuidor = ?
                 """
-                await cursor.execute(sql_sucursales, (id_distribuidor,))
-                sucursales = await cursor.fetchall()
+                cursor.execute(sql_sucursales, (id_distribuidor,))
+                sucursales = cursor.fetchall()
 
                 for sucursal in sucursales:
                     for key in ['created', 'lastUpdate']:
@@ -31,10 +31,10 @@ async def process_distribuidor_por_id(connection, id_distribuidor):
 
                 distribuidor['sucursales'] = sucursales
 
-                sql_horarios = "SELECT * FROM horarios_distribuidor WHERE id_distribuidor = %s"
-                await cursor.execute(sql_horarios, (id_distribuidor,))
+                sql_horarios = "SELECT * FROM horarios_distribuidor WHERE id_distribuidor = ?"
+                cursor.execute(sql_horarios, (id_distribuidor,))
 
-                horarios_raw = await cursor.fetchall()
+                horarios_raw = cursor.fetchall()
                 horarios_distribuidor= {}
                 for horario in horarios_raw:
                     dia = horario['day']
@@ -45,9 +45,9 @@ async def process_distribuidor_por_id(connection, id_distribuidor):
 
                 distribuidor['horarios_distribuidor'] = horarios_distribuidor
                 
-                sql_marcas = "SELECT marca FROM marcas_distribuidor WHERE id_distribuidor = %s"
-                await cursor.execute(sql_marcas, (id_distribuidor,))
-                marcas_raw = await cursor.fetchall()
+                sql_marcas = "SELECT marca FROM marcas_distribuidor WHERE id_distribuidor = ?"
+                cursor.execute(sql_marcas, (id_distribuidor,))
+                marcas_raw = cursor.fetchall()
                 marcas = [marca['marca'] for marca in marcas_raw]  
 
                 distribuidor['marcas'] = marcas
@@ -59,10 +59,10 @@ async def process_distribuidor_por_id(connection, id_distribuidor):
 
     
 @distribuidor_fl1.route('/<int:distribuidor_id>', methods=['GET'])
-async def get_distribuidor_by_id(distribuidor_id):
-    async with connect_to_database() as con:
+def get_distribuidor_by_id(distribuidor_id):
+    with connect_to_database() as con:
         try:
-            distribuidor_by_id= await process_distribuidor_por_id(con,distribuidor_id)
+            distribuidor_by_id= process_distribuidor_por_id(con,distribuidor_id)
             if distribuidor_by_id:
                 return jsonify({"success": True, "data": distribuidor_by_id})
             else:

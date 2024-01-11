@@ -1,76 +1,19 @@
--- CREATE TABLE sucursal (
---     id_sucursal INT AUTO_INCREMENT  PRIMARY KEY,
---     direccion VARCHAR(255),
---     telefono VARCHAR(255),
---     nombre VARCHAR(255),
---     gerente VARCHAR(100),
---     contacto VARCHAR(255),
---     correo_electronico VARCHAR(255),
---     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
---     lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
---     url_logo VARCHAR(255),
---     coordenadas VARCHAR(255)
--- );
-
-
--- CREATE TABLE distribuidor (
---     id_distribuidor INT PRIMARY KEY AUTO_INCREMENT,
---     gerente VARCHAR(255),
---     logo_image VARCHAR(255),
---     coordenadas VARCHAR(255),
---     direccion VARCHAR(255),
---     nombre VARCHAR(255),
---     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
---     lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
---     url_paginaWeb VARCHAR(255),
---     telefono VARCHAR(100),
---     email VARCHAR(255)
--- );
--- CREATE TABLE usuario (
---     id_usuario VARCHAR(255) PRIMARY KEY,
---     rol VARCHAR(100),
---     nombres VARCHAR(100),
---     apellidos VARCHAR(100),
---     correo_electronico VARCHAR(255),
---     num_telefono VARCHAR(100),
---     url_logo VARCHAR(255),
---     coordenadas VARCHAR(255),
---     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
---     lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
---     id_sucursal INT,
---     id_distribuidor INT,
---     FOREIGN KEY (id_sucursal) REFERENCES sucursal(id_sucursal),
---     FOREIGN KEY (id_distribuidor) REFERENCES distribuidor(id_distribuidor)
--- );
-CREATE TABLE sucursal (
-    id_sucursal INT AUTO_INCREMENT  PRIMARY KEY,
-    direccion VARCHAR(255),
-    telefono VARCHAR(255),
-    nombre VARCHAR(255),
-    gerente VARCHAR(100),
-    contacto VARCHAR(255),
-    correo_electronico VARCHAR(255),
-    created TIMESTAMP,
-    lastUpdate TIMESTAMP,
-    url_logo VARCHAR(255),
-    coordenadas VARCHAR(255)
-);
 CREATE TABLE distribuidor (
-    id_distribuidor INT PRIMARY KEY AUTO_INCREMENT,
+    id_distribuidor INT PRIMARY KEY IDENTITY(1,1),
     gerente VARCHAR(255),
     logo_image VARCHAR(255),
     coordenadas VARCHAR(255),
     direccion VARCHAR(255),
     nombre VARCHAR(255),
-    created TIMESTAMP ,
-    lastUpdate TIMESTAMP ,
+    created DATETIME2 ,
+    lastUpdate DATETIME2 ,
     url_paginaWeb VARCHAR(255),
     telefono VARCHAR(100),
     email VARCHAR(255)
 );
 
 CREATE TABLE distribuidor_sucursal (
-    id_relacion INT AUTO_INCREMENT  PRIMARY KEY,
+    id_relacion INT IDENTITY(1,1)  PRIMARY KEY,
     id_distribuidor INT,
     id_sucursal INT,
     FOREIGN KEY (id_distribuidor) REFERENCES distribuidor(id_distribuidor),
@@ -78,7 +21,7 @@ CREATE TABLE distribuidor_sucursal (
 );
 
 CREATE TABLE usuario (
-    id_usuario INT AUTO_INCREMENT PRIMARY KEY ,
+    id_usuario INT IDENTITY(1,1) PRIMARY KEY ,
     id_usuario_firebase VARCHAR(255),
     rol VARCHAR(100),
     nombres VARCHAR(100),
@@ -87,8 +30,8 @@ CREATE TABLE usuario (
     num_telefono VARCHAR(100),
     url_logo VARCHAR(255),
     coordenadas VARCHAR(255),
-    created TIMESTAMP ,
-    lastUpdate TIMESTAMP ,
+    created DATETIME2 ,
+    lastUpdate DATETIME2 ,
     id_sucursal INT,
     id_distribuidor INT,
     FOREIGN KEY (id_sucursal) REFERENCES sucursal(id_sucursal),
@@ -96,43 +39,44 @@ CREATE TABLE usuario (
 );
 
 CREATE TABLE registro_actividades_usuario (
-    id_registro INT PRIMARY KEY AUTO_INCREMENT,
+    id_registro INT PRIMARY KEY IDENTITY(1,1),
     id_usuario INT,
     accion VARCHAR(255),
     coordenadas VARCHAR(255),
-    fecha_hora TIMESTAMP,
+    fecha_hora DATETIME2,
     FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
 );
 
 CREATE TABLE articulo (
-    id_articulo INT PRIMARY KEY AUTO_INCREMENT,
+    id_articulo INT PRIMARY KEY IDENTITY(1,1),
     marca VARCHAR(255),
     modelo VARCHAR(255),
     categoria VARCHAR(255),
     ano VARCHAR(4), 
-    precio DOUBLE,
+    precio FLOAT,
     kilometraje VARCHAR(255),
-    created TIMESTAMP,
-    lastUpdate TIMESTAMP,
-    lastInventoryUpdate TIMESTAMP,
-    enable BOOLEAN,
+    created DATETIME2,
+    lastUpdate DATETIME2,
+    lastInventoryUpdate DATETIME2,
+    [enable] BIT,
     mainImage VARCHAR(255),
     descripcion TEXT,
     color VARCHAR(255),
-    espedition_date TIMESTAMP
+    espedition_date DATETIME2
 );
 
 CREATE TABLE favoritos (
-    id_favorito INT PRIMARY KEY AUTO_INCREMENT,
+    id_favorito INT PRIMARY KEY IDENTITY(1,1),
     id_usuario INT,
     id_articulo INT,
-    fecha_agregado TIMESTAMP,
+    [enable] BIT,
+    fecha_agregado DATETIME2,
     FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario),
     FOREIGN KEY (id_articulo) REFERENCES articulo(id_articulo)
 );
 
 CREATE TABLE images_articulo (
-    id_images_articulo INT AUTO_INCREMENT  PRIMARY KEY,
+    id_images_articulo INT IDENTITY(1,1)  PRIMARY KEY,
     url_image TEXT,
     descripcion TEXT,
     id_articulo INT,
@@ -140,7 +84,7 @@ CREATE TABLE images_articulo (
 );
 
 CREATE TABLE articulo_sucursal (
-    id_relacion INT AUTO_INCREMENT  PRIMARY KEY,
+    id_relacion INT IDENTITY(1,1)  PRIMARY KEY,
     id_articulo INT,
     id_sucursal INT,
     FOREIGN KEY (id_articulo) REFERENCES articulo(id_articulo),
@@ -148,7 +92,7 @@ CREATE TABLE articulo_sucursal (
 );
 
 CREATE TABLE images_sucursal (
-    id_images_sucursal INT AUTO_INCREMENT  PRIMARY KEY,
+    id_images_sucursal INT IDENTITY(1,1)  PRIMARY KEY,
     url_image TEXT,
     descripcion TEXT,
     id_sucursal INT,
@@ -156,25 +100,25 @@ CREATE TABLE images_sucursal (
 );
 
 CREATE TABLE especificaciones (
-    id_especificacion INT AUTO_INCREMENT PRIMARY KEY,
+    id_especificacion INT IDENTITY(1,1) PRIMARY KEY,
     tipo VARCHAR(255),
     id_articulo INT,
     FOREIGN KEY (id_articulo) REFERENCES articulo(id_articulo)
 );
 
 CREATE TABLE subespecificaciones (
-    id_subespecificacion INT AUTO_INCREMENT PRIMARY KEY,
+    id_subespecificacion INT IDENTITY(1,1) PRIMARY KEY,
     clave VARCHAR(255),
     valor TEXT,
     id_especificacion INT,
     FOREIGN KEY (id_especificacion) REFERENCES especificaciones(id_especificacion)
 );
 CREATE TABLE especificaciones_adm (
-    id_especificacion INT AUTO_INCREMENT PRIMARY KEY,
+    id_especificacion INT IDENTITY(1,1) PRIMARY KEY,
     tipo VARCHAR(255) UNIQUE
 );
 CREATE TABLE subespecificaciones_adm (
-    id_subespecificacion INT AUTO_INCREMENT PRIMARY KEY,
+    id_subespecificacion INT IDENTITY(1,1) PRIMARY KEY,
     clave VARCHAR(255),
     valor TEXT,
     id_especificacion INT,
@@ -182,7 +126,7 @@ CREATE TABLE subespecificaciones_adm (
 );
 
 CREATE TABLE marcas_adm(
-    id_marca INT AUTO_INCREMENT PRIMARY KEY,
+    id_marca INT IDENTITY(1,1) PRIMARY KEY,
     marca VARCHAR(255),
     id_especificacion INT,
     FOREIGN KEY (id_especificacion) REFERENCES especificaciones_adm(id_especificacion)
@@ -191,7 +135,7 @@ CREATE TABLE marcas_adm(
 
 
 CREATE TABLE marcas_distribuidor(
-    id_marca INT AUTO_INCREMENT PRIMARY KEY,
+    id_marca INT IDENTITY(1,1) PRIMARY KEY,
     marca VARCHAR(255),
     id_distribuidor INT,
     FOREIGN KEY (id_distribuidor) REFERENCES distribuidor(id_distribuidor)
@@ -200,21 +144,36 @@ CREATE TABLE marcas_distribuidor(
 
 
 CREATE TABLE horarios_distribuidor (
-    id_horario INT AUTO_INCREMENT PRIMARY KEY,
-    open TIME,
-    close TIME,
+    id_horario INT IDENTITY(1,1) PRIMARY KEY,
+    [open]TIME,
+    [close] TIME,
     day VARCHAR(10),
     id_distribuidor INT,
     FOREIGN KEY (id_distribuidor) REFERENCES distribuidor(id_distribuidor)
 );
 
 CREATE TABLE horarios_sucursal (
-    id_horario INT AUTO_INCREMENT PRIMARY KEY,
-    open TIME,
-    close TIME,
+    id_horario INT IDENTITY(1,1) PRIMARY KEY,
+    [open]TIME,
+    [close] TIME,
     day VARCHAR(10),
     id_sucursal INT,
     FOREIGN KEY (id_sucursal) REFERENCES sucursal(id_sucursal)
+);
+
+
+CREATE TABLE sucursal (
+    id_sucursal INT IDENTITY(1,1)  PRIMARY KEY,
+    direccion VARCHAR(255),
+    telefono VARCHAR(255),
+    nombre VARCHAR(255),
+    gerente VARCHAR(100),
+    contacto VARCHAR(255),
+    correo_electronico VARCHAR(255),
+    created DATETIME2,
+    lastUpdate DATETIME2,
+    url_logo VARCHAR(255),
+    coordenadas VARCHAR(255)
 );
 
 
@@ -227,7 +186,7 @@ CREATE TABLE horarios_sucursal (
 --     FOREIGN KEY (id_articulo) REFERENCES articulo(id_articulo)
 -- );
 -- CREATE TABLE auto (
---     id_auto INT AUTO_INCREMENT  PRIMARY KEY,
+--     id_auto INT IDENTITY(1,1)  PRIMARY KEY,
 --     nombre VARCHAR(100),
 --     descripcion VARCHAR(255),
 --     disponibilidad BOOLEAN,
@@ -249,14 +208,14 @@ CREATE TABLE horarios_sucursal (
 
 -- quitar catalogo
 -- CREATE TABLE catalogo (
---     id_catalogo INT AUTO_INCREMENT  PRIMARY KEY,
+--     id_catalogo INT IDENTITY(1,1)  PRIMARY KEY,
 --     sucursal_id INT,
 --     -- auto_id INT,
 --     -- agregar:
 --     -- nombre VARCHAR(255),
---     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
---     lastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
---     lastInventoryUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+--     created DATETIME2 DEFAULT CURRENT_DATETIME2,
+--     lastUpdate DATETIME2 DEFAULT CURRENT_DATETIME2 ON UPDATE CURRENT_DATETIME2,
+--     lastInventoryUpdate DATETIME2 DEFAULT CURRENT_DATETIME2 ON UPDATE CURRENT_DATETIME2,
 --     especificaciones TEXT,
 --     main_image VARCHAR(255),
 --     descripcion TEXT,
@@ -266,7 +225,7 @@ CREATE TABLE horarios_sucursal (
 
 
 -- CREATE TABLE images_sucursal (
---     id_images_sucursal INT AUTO_INCREMENT  PRIMARY KEY,
+--     id_images_sucursal INT IDENTITY(1,1)  PRIMARY KEY,
 --     url_image TEXT,
 --     descripcion TEXT,
 --     id_sucursal INT,
@@ -286,7 +245,7 @@ CREATE TABLE horarios_sucursal (
 -- LEFT JOIN favoritos f ON a.id_articulo = f.id_articulo AND f.id_usuario = 'ID_DEL_USUARIO'
 
 -- CREATE TABLE articulo_distribuidor (
---     id_relacion INT AUTO_INCREMENT  PRIMARY KEY,
+--     id_relacion INT IDENTITY(1,1)  PRIMARY KEY,
 --     id_articulo INT,
 --     id_sucursal INT,
 --     FOREIGN KEY (id_articulo) REFERENCES articulo(id_articulo),

@@ -13,12 +13,12 @@ sucursal_fl.register_blueprint(sucursal_fl1)
 sucursal_fl.register_blueprint(sucursal_fl2)
 sucursal_fl.register_blueprint(images_sucursal_fl2)
 
-async def process_sucursal(connection):
+def process_sucursal(connection):
     try:
-        async with connection.cursor() as cursor:
+        with connection.cursor() as cursor:
             sql_sucursal = """SELECT * FROM sucursal;"""
-            await cursor.execute(sql_sucursal)
-            sucursal_results = await cursor.fetchall()
+            cursor.execute(sql_sucursal)
+            sucursal_results = cursor.fetchall()
 
             for sucursal_record in sucursal_results:
 
@@ -28,9 +28,9 @@ async def process_sucursal(connection):
                 id_sucursal = sucursal_record['id_sucursal']
 
                 sql_sucursales_imagenes = """SELECT * FROM images_sucursal
-                                             WHERE id_sucursal = %s;"""
-                await cursor.execute(sql_sucursales_imagenes, (id_sucursal,))
-                sucursal_images = await cursor.fetchall()
+                                             WHERE id_sucursal = ?;"""
+                cursor.execute(sql_sucursales_imagenes, (id_sucursal,))
+                sucursal_images = cursor.fetchall()
                 sucursal_record['sucursal_images'] = sucursal_images
 
                 sql_articulos = """SELECT articulo.ano,articulo.categoria, articulo.color,articulo.created,articulo.descripcion,
@@ -39,9 +39,9 @@ async def process_sucursal(connection):
                 articulo.marca,articulo.modelo,articulo.precio
                 FROM articulo 
                                    JOIN articulo_sucursal ON articulo.id_articulo = articulo_sucursal.id_articulo
-                                   WHERE articulo_sucursal.id_sucursal = %s;"""
-                await cursor.execute(sql_articulos, (id_sucursal,))
-                articulos_list = await cursor.fetchall()
+                                   WHERE articulo_sucursal.id_sucursal = ?;"""
+                cursor.execute(sql_articulos, (id_sucursal,))
+                articulos_list = cursor.fetchall()
                 for articulos in articulos_list:
                     for key, value in articulos.items():
                         if isinstance(value, datetime.datetime):
@@ -49,9 +49,9 @@ async def process_sucursal(connection):
 
                 sucursal_record['sucursal_articulos'] = articulos_list
 
-                sql_horarios_sucursal = "SELECT * FROM horarios_sucursal WHERE id_sucursal = %s"
-                await cursor.execute(sql_horarios_sucursal, (id_sucursal,))
-                horarios_raw = await cursor.fetchall()
+                sql_horarios_sucursal = "SELECT * FROM horarios_sucursal WHERE id_sucursal = ?"
+                cursor.execute(sql_horarios_sucursal, (id_sucursal,))
+                horarios_raw = cursor.fetchall()
                 horarios_sucursal = {}
                 for horario in horarios_raw:
                     dia = horario['day']
@@ -70,11 +70,11 @@ async def process_sucursal(connection):
 
     
 @sucursal_fl.route('/', methods=['GET'])
-async def get_sucursal_all():
-    async with connect_to_database() as connection:
+def get_sucursal_all():
+    with connect_to_database() as connection:
         try:
             # Obtener información de los pedidos del proveedor
-            sucursales = await process_sucursal(connection)
+            sucursales = process_sucursal(connection)
             return jsonify({"success": True, "data": sucursales})
         except Exception as e:
             return jsonify({"error": "Database error: {}".format(e)}), 500

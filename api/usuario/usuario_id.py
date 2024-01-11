@@ -5,12 +5,12 @@ from flask import Flask, Response, jsonify, request
 usuario_fl1=Blueprint('usuario_id', __name__)
 
 
-async def get_usuario(connection, usuario_id):
+def get_usuario(connection, usuario_id):
     try:
-        async with connection.cursor() as cursor:
-            sql_usuario = """SELECT * FROM usuario WHERE id_usuario = %s"""
-            await cursor.execute(sql_usuario, (usuario_id,))
-            usuario_info = await cursor.fetchone()
+        with connection.cursor() as cursor:
+            sql_usuario = """SELECT * FROM usuario WHERE id_usuario = """
+            cursor.execute(sql_usuario, (usuario_id,))
+            usuario_info = cursor.fetchone()
 
             if usuario_info:
                 for key in ['created', 'lastUpdate']: 
@@ -22,12 +22,12 @@ async def get_usuario(connection, usuario_id):
         print(f"Error obtaining user info for ID {usuario_id}: {e}")
         return None
     
-async def get_usuario_by_id_fire(connection, usuario_id):
+def get_usuario_by_id_fire(connection, usuario_id):
     try:
-        async with connection.cursor() as cursor:
-            sql_usuario = """SELECT * FROM usuario WHERE id_usuario_firebase = %s"""
-            await cursor.execute(sql_usuario, (usuario_id,))
-            usuario_info = await cursor.fetchone()
+        with connection.cursor() as cursor:
+            sql_usuario = """SELECT * FROM usuario WHERE id_usuario_firebase = """
+            cursor.execute(sql_usuario, (usuario_id,))
+            usuario_info = cursor.fetchone()
 
             if usuario_info:
                 for key in ['created', 'lastUpdate']: 
@@ -41,10 +41,10 @@ async def get_usuario_by_id_fire(connection, usuario_id):
 
     
 @usuario_fl1.route('/<int:id_usuario>', methods=['GET'])
-async def get_usuario_by_id(id_usuario):
-    async with connect_to_database() as con:
+def get_usuario_by_id(id_usuario):
+    with connect_to_database() as con:
         try:
-            usuario_by_id= await get_usuario(con,id_usuario)
+            usuario_by_id= get_usuario(con,id_usuario)
             if usuario_by_id:
                 return jsonify({"success": True, "data": usuario_by_id})
             else:
@@ -53,10 +53,10 @@ async def get_usuario_by_id(id_usuario):
             return jsonify({"error":"Data Base erorr {}".format(e)})
         
 @usuario_fl1.route('/idf/<string:id_usuario_firebase>', methods=['GET'])
-async def get_usuario_by_id_firebase(id_usuario_firebase):
-    async with connect_to_database() as con:
+def get_usuario_by_id_firebase(id_usuario_firebase):
+    with connect_to_database() as con:
         try:
-            usuario_by_id= await get_usuario_by_id_fire(con,id_usuario_firebase)
+            usuario_by_id= get_usuario_by_id_fire(con,id_usuario_firebase)
             if usuario_by_id:
                 return jsonify({"success": True, "data": usuario_by_id})
             else:

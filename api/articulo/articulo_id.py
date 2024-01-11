@@ -4,9 +4,9 @@ from flask import Flask, Response, jsonify, request
 
 articulo_fl1=Blueprint('articulo_id', __name__)
 
-async def get_articulo(connection, id_articulo):
+def get_articulo(connection, id_articulo):
     try:
-        async with connection.cursor() as cursor:
+        with connection.cursor() as cursor:
             sql_articulo = """
                 SELECT a.*, 
                        e.id_especificacion, e.tipo, 
@@ -14,10 +14,10 @@ async def get_articulo(connection, id_articulo):
                 FROM articulo a
                 LEFT JOIN especificaciones e ON a.id_articulo = e.id_articulo
                 LEFT JOIN images_articulo img ON a.id_articulo = img.id_articulo
-                WHERE a.id_articulo = %s
+                WHERE a.id_articulo = ?
             """
-            await cursor.execute(sql_articulo, (id_articulo,))
-            raw_results = await cursor.fetchall()
+            cursor.execute(sql_articulo, (id_articulo,))
+            raw_results = cursor.fetchall()
 
             if not raw_results:
                 return None  # No se encontró el artículo
@@ -50,10 +50,10 @@ async def get_articulo(connection, id_articulo):
 
                     sql_subespecificaciones = """
                         SELECT * FROM subespecificaciones
-                        WHERE id_especificacion = %s
+                        WHERE id_especificacion = ?
                     """
-                    await cursor.execute(sql_subespecificaciones, (id_especificacion,))
-                    subespecificaciones_raw = await cursor.fetchall()
+                    cursor.execute(sql_subespecificaciones, (id_especificacion,))
+                    subespecificaciones_raw = cursor.fetchall()
                     subespecificaciones = {sub['clave']: sub['valor'] for sub in subespecificaciones_raw}
 
                     especificacion = {
@@ -69,16 +69,15 @@ async def get_articulo(connection, id_articulo):
                     articulo_resultado['imagenes'].append(imagen)
 
             return articulo_resultado
-    finally:
-        connection.close()
+    except Exception as ex:
+        print("Error durante la ejecución de la consulta:", ex)
 
     
 @articulo_fl1.route('/<int:articulo_id>', methods=['GET'])
-async def get_articulo_by_id(articulo_id):
-
-    async with connect_to_database() as con:
+def get_articulo_by_id(articulo_id):
+    with connect_to_database() as con:
         try:
-            articulo_by_id= await get_articulo(con,articulo_id)
+            articulo_by_id= get_articulo(con,articulo_id)
             if articulo_by_id:
                 return jsonify({"success": True, "data": articulo_by_id})
             else:

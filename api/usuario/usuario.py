@@ -9,12 +9,12 @@ usuario_fl = Blueprint('usuario', __name__)
 usuario_fl.register_blueprint(usuario_fl1,)
 usuario_fl.register_blueprint(usuario_fl2,)
 
-async def process_usuario(connection):
+def process_usuario(connection):
     try:
-        async with connection.cursor() as cursor:
+        with connection.cursor() as cursor:
             sql_sucursal = """SELECT * FROM usuario;"""
-            await cursor.execute(sql_sucursal)
-            usuario_results = await cursor.fetchall()
+            cursor.execute(sql_sucursal)
+            usuario_results = cursor.fetchall()
             
             for usuario_record in usuario_results:
                 for key, value in usuario_record.items():
@@ -25,16 +25,16 @@ async def process_usuario(connection):
         connection.close()
 
 # @usuario_fl2.route('/favoritos/<int:id_usuario>', methods=['GET'])
-# async def obtener_todos_autos_favoritos_usuario(id_usuario): 
+# def obtener_todos_autos_favoritos_usuario(id_usuario): 
 #     try:
-#         async with connect_to_database() as connection:
-#             async with connection.cursor() as cursor:
+#         with connect_to_database() as connection:
+#             with connection.cursor() as cursor:
 #                 sql = """
 #                     SELECT articulo.*, favoritos.enable as favorite FROM articulo
 #                     JOIN favoritos ON articulo.id_articulo = favoritos.id_articulo
 #                 """
-#                 await cursor.execute(sql)
-#                 autos_favoritos = await cursor.fetchall()
+#                 cursor.execute(sql)
+#                 autos_favoritos = cursor.fetchall()
 #                 if not autos_favoritos:
 #                     return jsonify({"error": f"No se encontraron autos favoritos para el usuario con ID {id_usuario}"}), 404
 
@@ -44,10 +44,10 @@ async def process_usuario(connection):
 #         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
     
 # @usuario_fl2.route('/favoritos/<int:id_usuario>', methods=['GET'])
-# async def obtener_todos_autos_favoritos_usuario(id_usuario): 
+# def obtener_todos_autos_favoritos_usuario(id_usuario): 
 #     try:
-#         async with connect_to_database() as connection:
-#             async with connection.cursor() as cursor:
+#         with connect_to_database() as connection:
+#             with connection.cursor() as cursor:
 #                 # Consultar todos los artículos y marcar los favoritos
 #                 sql = """
 #                     SELECT 
@@ -56,11 +56,11 @@ async def process_usuario(connection):
 #                     FROM 
 #                         articulo
 #                     LEFT JOIN 
-#                         (SELECT * FROM favoritos WHERE id_usuario = %s) as fav 
+#                         (SELECT * FROM favoritos WHERE id_usuario = ) as fav 
 #                     ON articulo.id_articulo = fav.id_articulo
 #                 """
-#                 await cursor.execute(sql, (id_usuario,))
-#                 autos = await cursor.fetchall()
+#                 cursor.execute(sql, (id_usuario,))
+#                 autos = cursor.fetchall()
 
 #                 if not autos:
 #                     return jsonify({"error": "No se encontraron autos"}), 404
@@ -70,10 +70,10 @@ async def process_usuario(connection):
 #     except Exception as e:
 #         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
 @usuario_fl2.route('/favoritos/<int:id_usuario>', methods=['GET'])
-async def obtener_todos_autos_favoritos_usuario(id_usuario): 
+def obtener_todos_autos_favoritos_usuario(id_usuario): 
     try:
-        async with connect_to_database() as connection:
-            async with connection.cursor() as cursor:
+        with connect_to_database() as connection:
+            with connection.cursor() as cursor:
                 # Consultar todos los artículos y marcar los que son favoritos
                 sql = """
                     SELECT 
@@ -82,11 +82,11 @@ async def obtener_todos_autos_favoritos_usuario(id_usuario):
                     FROM 
                         articulo a
                     LEFT JOIN 
-                        (SELECT id_articulo FROM favoritos WHERE id_usuario = %s AND enable = 1) as fav 
+                        (SELECT id_articulo FROM favoritos WHERE id_usuario =  AND enable = 1) as fav 
                     ON a.id_articulo = fav.id_articulo
                 """
-                await cursor.execute(sql, (id_usuario,))
-                autos_all = await cursor.fetchall()
+                cursor.execute(sql, (id_usuario,))
+                autos_all = cursor.fetchall()
 
                 if not autos_all:
                     return jsonify({"error": "No se encontraron autos"}), 404
@@ -98,10 +98,10 @@ async def obtener_todos_autos_favoritos_usuario(id_usuario):
                         SELECT especificaciones.*, subespecificaciones.clave, subespecificaciones.valor
                         FROM especificaciones
                         LEFT JOIN subespecificaciones ON especificaciones.id_especificacion = subespecificaciones.id_especificacion
-                        WHERE especificaciones.id_articulo = %s
+                        WHERE especificaciones.id_articulo = 
                     """
-                    await cursor.execute(sql_especificaciones, (id_articulo,))
-                    especificaciones_raw = await cursor.fetchall()
+                    cursor.execute(sql_especificaciones, (id_articulo,))
+                    especificaciones_raw = cursor.fetchall()
                     
                     especificaciones = {}
                     for esp in especificaciones_raw:
@@ -112,10 +112,10 @@ async def obtener_todos_autos_favoritos_usuario(id_usuario):
                     sql_imagenes = """
                         SELECT url_image, descripcion
                         FROM images_articulo
-                        WHERE id_articulo = %s
+                        WHERE id_articulo = 
                     """
-                    await cursor.execute(sql_imagenes, (id_articulo,))
-                    imagenes = await cursor.fetchall()
+                    cursor.execute(sql_imagenes, (id_articulo,))
+                    imagenes = cursor.fetchall()
                     articulo['especificaciones'] = list(especificaciones.values())
                     articulo['imagenes'] = imagenes
                     autos.append(articulo)
@@ -127,10 +127,10 @@ async def obtener_todos_autos_favoritos_usuario(id_usuario):
 
     
 @usuario_fl.route('/', methods=['GET'])
-async def get_pedidos_proveedor():
-    async with connect_to_database() as connection:
+def get_pedidos_proveedor():
+    with connect_to_database() as connection:
         try:
-            usuarios = await process_usuario(connection)
+            usuarios = process_usuario(connection)
             return jsonify({"success": True, "data": usuarios})
         except Exception as e:
             return jsonify({"error": "Database error: {}".format(e)}), 500
