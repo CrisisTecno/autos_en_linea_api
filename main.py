@@ -31,9 +31,9 @@ CORS(app)
 
 @app.route('/')
 def root():
-    return '<h1>API DE AUTOS EN LINEA</h1>'
-@app.route('/init')
-def welcome():
+#    return '<h1>API DE AUTOS EN LINEA</h1>'
+# @app.route('/init')
+# def welcome():
     return '''
         <div style="text-align: center; margin-top:5vh">
             <h1>BIENVENIDOS A LA API DE AUTOS EN LINEA</h1>
