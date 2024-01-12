@@ -26,7 +26,6 @@ connection_string = 'DRIVER=SQL Server;SERVER=fwv.netsec.com.mx;DATABASE=autos_e
 
 @contextmanager
 def connect_to_database():
-    connection = None
     try:
         connection = pyodbc.connect(connection_string)
         print("Conexión establecida")
