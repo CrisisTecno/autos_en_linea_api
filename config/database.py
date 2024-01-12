@@ -22,7 +22,7 @@ database = os.getenv('DB_DATABASE', 'autos_en_linea_services')
 username = os.getenv('DB_USERNAME', 'scaleflow')
 password = os.getenv('DB_PASSWORD', 'Sc4l3fl0w')
 
-connection_string = f'DRIVER={{{driver}}};SERVER={server};DATABASE={database};UID={username};PWD={password}'
+connection_string = 'DRIVER=SQL Server;SERVER=fwv.netsec.com.mx;DATABASE=autos_en_linea_services;UID=scaleflow;PWD=Sc4l3fl0w'
 
 @contextmanager
 def connect_to_database():
