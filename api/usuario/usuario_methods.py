@@ -118,8 +118,8 @@ def usuario_existe_por_telefono():
                 
         
     except Exception as e:
-        print(e)
-        return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+        print(f"Error en la base de datos: {e}")  
+        return None 
 
 @usuario_fl2.route('/<int:id_usuario>/favoritos', methods=['GET'])
 def obtener_autos_favoritos_usuario(id_usuario): 
