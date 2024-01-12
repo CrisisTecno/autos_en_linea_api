@@ -18,16 +18,17 @@ def process_usuario(connection):
             sql_sucursal = """SELECT * FROM usuario;"""
             cursor.execute(sql_sucursal)
             usuario_results = resultados_a_json(cursor)
-           
-            for usuario_record in usuario_results:
-                 for key in ['created', 'lastUpdate']: 
-                    if usuario_record[key]:
-                        usuarios_info_2=convertir_a_datetime(usuario_record[key])
-                        usuario_record[key] = int(usuarios_info_2.timestamp() * 1000)
-        
+            
+            # for usuario_record in usuario_results:
+            #      for key in ['created', 'lastUpdate']: 
+            #         if usuario_record[key]:
+            #             usuarios_info_2=convertir_a_datetime(usuario_record[key])
+            #             usuario_record[key] = int(usuarios_info_2.timestamp() * 1000)
+            
             return usuario_results
     except Exception as e:
-        return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+        print(f"Error en la base de datos: {e}")  
+        return None 
 
 
 @usuario_fl2.route('/favoritos/<int:id_usuario>', methods=['GET'])
