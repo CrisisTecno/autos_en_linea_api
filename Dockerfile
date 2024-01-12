@@ -13,7 +13,5 @@ COPY . /app
 # Instala las dependencias del proyecto
 RUN pip install --no-cache-dir -r requirements.txt
 
-
-
 # Define el comando para ejecutar la aplicación
-CMD ["gunicorn", "-w", "4", "-b", "main:app"]
+CMD ["gunicorn", "-w", "4", "-b", "main.py"]
