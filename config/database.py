@@ -6,21 +6,30 @@ from contextlib import contextmanager
 # Carga las variables de entorno del archivo .env
 load_dotenv()
 
-# Obtén las variables de entorno
-driver = os.getenv('DB_DRIVER', '{SQL Server}')  # Usa un valor por defecto en caso de que no esté definido en .env
-server = os.getenv('DB_SERVER')
-database = os.getenv('DB_DATABASE')
-username = os.getenv('DB_USERNAME')
-password = os.getenv('DB_PASSWORD')
+# # Obtén las variables de entorno
+# driver = os.getenv('DB_DRIVER', '{SQL Server}')  # Usa un valor por defecto en caso de que no esté definido en .env
+# server = os.getenv('DB_SERVER')
+# database = os.getenv('DB_DATABASE')
+# username = os.getenv('DB_USERNAME')
+# password = os.getenv('DB_PASSWORD')
 
-# Cadena de conexión usando variables de entorno
-connection_string = f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}'
+# # Cadena de conexión usando variables de entorno
+# connection_string = f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}'
+
+driver = os.getenv('DB_DRIVER', 'ODBC Driver 17 for SQL Server')
+server = os.getenv('DB_SERVER', 'fwv.netsec.com.mx')
+database = os.getenv('DB_DATABASE', 'autos_en_linea_services')
+username = os.getenv('DB_USERNAME', 'scaleflow')
+password = os.getenv('DB_PASSWORD', 'Sc4l3fl0w')
+
+connection_string = f'DRIVER={{{driver}}};SERVER={server};DATABASE={database};UID={username};PWD={password}'
 
 @contextmanager
 def connect_to_database():
     connection = None
     try:
         connection = pyodbc.connect(connection_string)
+        print("Conexión establecida")
         yield connection
     except Exception as ex:
         print("Error durante la conexión:", ex)
