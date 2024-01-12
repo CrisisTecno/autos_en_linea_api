@@ -13,8 +13,7 @@ COPY . /app
 # Instala las dependencias del proyecto
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expone el puerto en el que se ejecutará la aplicación
-EXPOSE 8000
+
 
 # Define el comando para ejecutar la aplicación
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8000", "main:app"]
+CMD ["gunicorn", "-w", "4", "-b", "main:app"]
