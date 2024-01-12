@@ -99,17 +99,18 @@ def usuario_existe_por_telefono():
     try:
         with connect_to_database() as connection:
             with connection.cursor() as cursor:
-                print(num_telefono)
-                sql = "SELECT COUNT(*) FROM usuario WHERE num_telefono = ?"
+               
+                sql = "SELECT COUNT(*) as conteo FROM usuario WHERE num_telefono = ?"
                 cursor.execute(sql, (num_telefono,))
                 result = resultados_a_json(cursor, unico_resultado=True)
-              
-                existe = result['COUNT(*)'] > 0
+                
+                existe = result['conteo'] > 0
                 id_usuario = None
                 if existe:
                     sql_firebase = "SELECT * FROM usuario WHERE num_telefono = ?"
                     cursor.execute(sql_firebase, (num_telefono,))
                     result_firebase = resultados_a_json(cursor, unico_resultado=True)
+                   
                     id_usuario = result_firebase['id_usuario'] if result_firebase else None
                     return jsonify({"existe": existe, "data": result_firebase}), 200
                 else:
@@ -118,8 +119,7 @@ def usuario_existe_por_telefono():
                 
         
     except Exception as e:
-        print(f"Error en la base de datos: {e}")  
-        return None 
+        return jsonify({"error": f"Error en la base de datos: {e}"}), 500
 
 @usuario_fl2.route('/<int:id_usuario>/favoritos', methods=['GET'])
 def obtener_autos_favoritos_usuario(id_usuario): 

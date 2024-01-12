@@ -9,7 +9,6 @@ def convertir_a_datetime(cadena):
     try:
         return datetime.datetime.strptime(cadena, formato_fecha)
     except ValueError:
-        # Intenta un formato sin microsegundos si falla el primero
         formato_fecha = "%Y-%m-%d %H:%M:%S"
         return datetime.datetime.strptime(cadena, formato_fecha)
 
