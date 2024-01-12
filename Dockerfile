@@ -1,13 +1,13 @@
 # Use the official Python image from the Docker Hub
 FROM python:3.9-slim
 
-# Install system dependencies required for Pyodbc
+# Install system dependencies required for Pyodbc and curl
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends gnupg g++ unixodbc-dev
+    && apt-get install -y --no-install-recommends gnupg g++ unixodbc-dev curl
 
-# Add Microsoft repository
-RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
-    && curl https://packages.microsoft.com/config/debian/10/prod.list > /etc/apt/sources.list.d/mssql-release.list
+# Add Microsoft repository using the new recommended approach
+RUN curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /usr/share/keyrings/msprod.gpg \
+    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/msprod.gpg] https://packages.microsoft.com/debian/10/prod buster main" > /etc/apt/sources.list.d/mssql-release.list
 
 # Install Microsoft ODBC Driver for SQL Server
 RUN apt-get update \
