@@ -86,4 +86,4 @@ app.register_blueprint(usuario_fl, url_prefix='/usuarios')
 app.register_blueprint(articulo_fl, url_prefix='/articulos')
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)

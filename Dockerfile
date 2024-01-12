@@ -14,4 +14,4 @@ COPY . /app
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Define el comando para ejecutar la aplicación
-CMD ["gunicorn", "main:py"]
+CMD ["gunicorn", "main:app"]
