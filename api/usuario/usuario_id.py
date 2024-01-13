@@ -34,7 +34,7 @@ def get_usuario_by_id_fire(connection, usuario_id):
             sql_usuario = """SELECT * FROM usuario WHERE id_usuario_firebase = ?"""
             cursor.execute(sql_usuario, (usuario_id,))
             usuario_info = resultados_a_json(cursor, unico_resultado=True)
-            print(usuario_info)
+            
             # if usuario_info:
             #     for key in ['created', 'lastUpdate']: 
             #         if usuario_info[key]:

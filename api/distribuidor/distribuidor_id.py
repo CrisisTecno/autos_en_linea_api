@@ -14,11 +14,11 @@ def process_distribuidor_por_id(connection, id_distribuidor):
             cursor.execute(sql_distribuidor, (id_distribuidor,))
             distribuidor = resultados_a_json(cursor, unico_resultado=True)
             if distribuidor:
-                for key in ['created', 'lastUpdate']:
-                    if distribuidor[key]:
-                        usuarios_info_2=convertir_a_datetime(distribuidor[key])
+                # for key in ['created', 'lastUpdate']:
+                #     if distribuidor[key]:
+                #         usuarios_info_2=convertir_a_datetime(distribuidor[key])
 
-                        distribuidor[key] = int(usuarios_info_2.timestamp() * 1000)
+                #         distribuidor[key] = int(usuarios_info_2.timestamp() * 1000)
 
                 sql_sucursales = """
                     SELECT s.* FROM sucursal s
@@ -28,11 +28,11 @@ def process_distribuidor_por_id(connection, id_distribuidor):
                 cursor.execute(sql_sucursales, (id_distribuidor,))
                 sucursales = resultados_a_json(cursor)
 
-                for sucursal in sucursales:
-                    for key in ['created', 'lastUpdate']:
-                        if sucursal[key]:
-                            usuarios_info_2=convertir_a_datetime(sucursal[key])
-                            sucursal[key] = int(usuarios_info_2.timestamp() * 1000)
+                # for sucursal in sucursales:
+                #     for key in ['created', 'lastUpdate']:
+                #         if sucursal[key]:
+                #             usuarios_info_2=convertir_a_datetime(sucursal[key])
+                #             sucursal[key] = int(usuarios_info_2.timestamp() * 1000)
 
                 distribuidor['sucursales'] = sucursales
 
@@ -68,6 +68,7 @@ def get_distribuidor_by_id(distribuidor_id):
     with connect_to_database() as con:
         try:
             distribuidor_by_id= process_distribuidor_por_id(con,distribuidor_id)
+            print(distribuidor_by_id)
             if distribuidor_by_id:
                 return jsonify({"success": True, "data": distribuidor_by_id})
             else:

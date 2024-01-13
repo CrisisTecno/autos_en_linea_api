@@ -22,14 +22,14 @@ def process_distribuidor(connection):
             sql_distribuidor = "SELECT * FROM distribuidor"
             cursor.execute(sql_distribuidor)
             distribuidores = resultados_a_json(cursor)
-            
+            print(distribuidores)
             for distribuidor in distribuidores:
                 id_distribuidor = distribuidor['id_distribuidor']
 
-                for key in ['created', 'lastUpdate']: 
-                    if distribuidor[key]:
-                        usuarios_info_2=convertir_a_datetime(distribuidor[key])
-                        distribuidor[key] = int(usuarios_info_2.timestamp() * 1000)
+                # for key in ['created', 'lastUpdate']: 
+                #     if distribuidor[key]:
+                #         usuarios_info_2=convertir_a_datetime(distribuidor[key])
+                #         distribuidor[key] = int(usuarios_info_2.timestamp() * 1000)
 
                 sql_sucursales = """
                     SELECT s.* FROM sucursal s
@@ -39,11 +39,11 @@ def process_distribuidor(connection):
                 cursor.execute(sql_sucursales, (id_distribuidor,))
                 sucursales = resultados_a_json(cursor)
 
-                for sucursal in sucursales:
-                    for key in ['created', 'lastUpdate']: 
-                        if sucursal[key]:
-                            usuarios_info_2=convertir_a_datetime(sucursal[key])
-                            sucursal[key] = int(usuarios_info_2.timestamp() * 1000)
+                # for sucursal in sucursales:
+                #     for key in ['created', 'lastUpdate']: 
+                #         if sucursal[key]:
+                #             usuarios_info_2=convertir_a_datetime(sucursal[key])
+                #             sucursal[key] = int(usuarios_info_2.timestamp() * 1000)
 
                 distribuidor['sucursales'] = sucursales
 
@@ -67,7 +67,7 @@ def process_distribuidor(connection):
                 marcas = [marca['marca'] for marca in marcas_raw]  
 
                 distribuidor['marcas'] = marcas
-
+            print(distribuidores)
             return distribuidores
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
@@ -82,6 +82,7 @@ def get_distribuidor():
         try:
             # Obtener información de los pedidos del proveedor
             distribuidor = process_distribuidor(connection)
+            print(distribuidor)
             return jsonify({"success": True, "data": distribuidor})
         except Exception as e:
             return jsonify({"error": "Database error: {}".format(e)}), 500

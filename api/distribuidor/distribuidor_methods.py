@@ -57,13 +57,18 @@ def crear_distribuidor():
             ]
             
             if not all(campo in data for campo in campos_requeridos) or not all(dia in data['horarioAtencion'] for dia in ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo']):
+                
                 return jsonify({"error": "Faltan campos requeridos"}), 400
                 
             with connection.cursor() as cursor:
-                sql_distribuidor = """INSERT INTO distribuidor (
-                                          gerente, logo_image, coordenadas, direccion,
-                                          nombre, url_paginaWeb, telefono, email,created,lastUpdate
-                                      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?,?, ?)"""
+                sql_distribuidor = """
+                        INSERT INTO distribuidor (
+                            gerente, logo_image, coordenadas, direccion,
+                            nombre, url_paginaWeb, telefono, email, created, lastUpdate
+                        )
+                        OUTPUT INSERTED.id_distribuidor
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                    """
                 valores_distribuidor = (
                     data['gerente'],
                     data['logo_image'],
@@ -77,7 +82,14 @@ def crear_distribuidor():
                     convert_milliseconds_to_datetime(data['lastUpdate'])
                 )
                 cursor.execute(sql_distribuidor, valores_distribuidor)
-                id_distribuidor = cursor.lastrowid  # Obtener el ID del distribuidor insertado
+                id_distribuidor = cursor.fetchone()[0]
+                print(id_distribuidor)
+                # sql_id_distribuidor= """
+                #     SELECT id_distribuidor FROM distribuidor
+                #     WHERE nombre = ? AND email = ? AND telefono = ? AND gerente = ?
+                # """
+                # cursor.execute(sql, (data['nombre'], data['email'], data['telefono'], data['gerente']))
+                # print(id_distribuidor)
 
                 # Insertar relaciones distribuidor-sucursal
                 if 'sucursales' in data and isinstance(data['sucursales'], list):
@@ -96,7 +108,7 @@ def crear_distribuidor():
                 for dia, horarios in data['horarioAtencion'].items():
                     open_time = convert_milliseconds_to_time_string(horarios['open'])
                     close_time = convert_milliseconds_to_time_string(horarios['close'])
-                    sql_horarios = """INSERT INTO horarios_distribuidor (id_distribuidor, day, open, close) 
+                    sql_horarios = """INSERT INTO horarios_distribuidor (id_distribuidor, day, [open], [close])
                                       VALUES (?, ?, ?, ?)"""
                     cursor.execute(sql_horarios, (id_distribuidor, dia, open_time, close_time))
 
@@ -170,12 +182,12 @@ def obtener_usuarios_por_distribuidor(id_distribuidor):
                 cursor.execute(sql, (id_distribuidor,))
                 usuarios = resultados_a_json(cursor)
                 print(usuarios)
-                for user in usuarios:
-                    for key in ['created', 'lastUpdate']:
-                        if user[key]:
-                            usuarios_info_2=convertir_a_datetime(user[key])
+                # for user in usuarios:
+                #     for key in ['created', 'lastUpdate']:
+                #         if user[key]:
+                #             usuarios_info_2=convertir_a_datetime(user[key])
 
-                            user[key] = int(usuarios_info_2.timestamp() * 1000)
+                #             user[key] = int(usuarios_info_2.timestamp() * 1000)
                     
                 if not usuarios:
                     return jsonify({"error": f"No se encontraron usuarios para el distribuidor con ID {id_distribuidor}"}), 404
@@ -233,9 +245,9 @@ def procesar_articulo(cursor, id_articulo):
         'ano': resultados_crudos[0]['ano'],
         'precio': resultados_crudos[0]['precio'],
         'kilometraje': resultados_crudos[0]['kilometraje'],
-        'created': int(resultados_crudos[0]['created'].timestamp() * 1000),
-        'lastUpdate': int(resultados_crudos[0]['lastUpdate'].timestamp() * 1000),
-        'lastInventoryUpdate': int(resultados_crudos[0]['lastInventoryUpdate'].timestamp() * 1000),
+        'created': resultados_crudos[0]['created'],
+        'lastUpdate': resultados_crudos[0]['lastUpdate'],
+        'lastInventoryUpdate': resultados_crudos[0]['lastInventoryUpdate'],
         'enable': resultados_crudos[0]['enable'],
         'descripcion': resultados_crudos[0]['descripcion'],
         'color': resultados_crudos[0]['color'],  
@@ -379,11 +391,11 @@ def obtener_sucursales_por_distribuidor(id_distribuidor):
                 for sucursal_record in sucursales_raw:
                     id_sucursal = sucursal_record['id_sucursal']
 
-                    for key in ['created', 'lastUpdate']:
-                        if sucursal_record[key]:
-                            usuarios_info_2=convertir_a_datetime(sucursal_record[key])
+                    # for key in ['created', 'lastUpdate']:
+                    #     if sucursal_record[key]:
+                    #         usuarios_info_2=convertir_a_datetime(sucursal_record[key])
 
-                            sucursal_record[key] = int(usuarios_info_2.timestamp() * 1000)
+                    #         sucursal_record[key] = int(usuarios_info_2.timestamp() * 1000)
 
                     sql_sucursales_imagenes = "SELECT * FROM images_sucursal WHERE id_sucursal = ?;"
                     cursor.execute(sql_sucursales_imagenes, (id_sucursal,))
@@ -397,11 +409,11 @@ def obtener_sucursales_por_distribuidor(id_distribuidor):
                     """
                     cursor.execute(sql_articulos, (id_sucursal,))
                     articulos_list = resultados_a_json(cursor)
-                    for articulo in articulos_list:
-                        for key in ['created', 'lastUpdate', 'lastInventoryUpdate']:
-                            if articulo[key]:
-                                usuarios_info_2=convertir_a_datetime(articulo[key])
-                                articulo[key] = int(usuarios_info_2.timestamp() * 1000)
+                    # for articulo in articulos_list:
+                    #     for key in ['created', 'lastUpdate', 'lastInventoryUpdate']:
+                    #         if articulo[key]:
+                    #             usuarios_info_2=convertir_a_datetime(articulo[key])
+                    #             articulo[key] = int(usuarios_info_2.timestamp() * 1000)
 
                     sucursal_record['sucursal_articulos'] = articulos_list
 
@@ -412,8 +424,8 @@ def obtener_sucursales_por_distribuidor(id_distribuidor):
                     for horario in horarios_raw:
                         dia = horario['day']
                         horarios_sucursal[dia] = {
-                            'open': timedelta_to_milliseconds(horario['open']),
-                            'close': timedelta_to_milliseconds(horario['close'])
+                            'open': horario['open'],
+                            'close': horario['close']
                         }
 
                     sucursal_record['horarios_sucursal'] = horarios_sucursal

@@ -134,6 +134,7 @@ def buscar_articulos():
         marcas = request.args.getlist('marca')
         modelos = request.args.getlist('modelo')
         colores = request.args.getlist('color')
+        precio = request.args.getlist('price')
 
         consulta = "SELECT * FROM articulo WHERE 1=1"
         parametros = []
@@ -153,6 +154,9 @@ def buscar_articulos():
         if colores:
             consulta += f" AND color IN ({','.join(['?'] * len(colores))})"
             parametros.extend(colores)
+        if precio:
+            consulta += " AND precio <= ?"
+            parametros.extend(precio) 
 
         with connect_to_database() as connection:
             with connection.cursor() as cursor:
