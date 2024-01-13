@@ -2,7 +2,7 @@ from flask import Blueprint, render_template
 from config.database import connect_to_database
 from flask import Flask, Response, jsonify, request
 from utils.time import convert_milliseconds_to_datetime,convert_milliseconds_to_time_string
-from utils.time import convert_milliseconds_to_datetime,convert_milliseconds_to_time_string,timedelta_to_milliseconds
+from utils.time import convert_milliseconds_to_datetime,convert_milliseconds_to_time_string,timedelta_to_milliseconds,unix_to_datetime
 from utils.serializer import resultados_a_json, convertir_a_datetime
 
 distribuidor_fl2=Blueprint('distribuidor_methods', __name__)
@@ -78,12 +78,12 @@ def crear_distribuidor():
                     data['url_paginaWeb'],
                     data['telefono'],
                     data['email'],
-                    convert_milliseconds_to_datetime(data['created']),
-                    convert_milliseconds_to_datetime(data['lastUpdate'])
+                    unix_to_datetime(data['created']),
+                    unix_to_datetime(data['lastUpdate'])
                 )
                 cursor.execute(sql_distribuidor, valores_distribuidor)
                 id_distribuidor = cursor.fetchone()[0]
-                print(id_distribuidor)
+              
                 # sql_id_distribuidor= """
                 #     SELECT id_distribuidor FROM distribuidor
                 #     WHERE nombre = ? AND email = ? AND telefono = ? AND gerente = ?
@@ -138,8 +138,12 @@ def actualizar_distribuidor(id_distribuidor):
 
                 for campo in campos_permitidos:
                     if campo in data:
+                        valor = data[campo]
+                        if campo in ['created', 'lastUpdate']:
+                            valor = unix_to_datetime(valor)
                         sql_update += f"{campo} = ?, "
-                        valores.append(data[campo])
+                        valores.append(valor)
+
 
                 sql_update = sql_update.rstrip(', ')
                 sql_update += " WHERE id_distribuidor = ?"
@@ -181,7 +185,7 @@ def obtener_usuarios_por_distribuidor(id_distribuidor):
                 """
                 cursor.execute(sql, (id_distribuidor,))
                 usuarios = resultados_a_json(cursor)
-                print(usuarios)
+         
                 # for user in usuarios:
                 #     for key in ['created', 'lastUpdate']:
                 #         if user[key]:

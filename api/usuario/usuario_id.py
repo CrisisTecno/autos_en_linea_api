@@ -25,8 +25,7 @@ def get_usuario(connection, usuario_id):
             return usuario_info
 
     except Exception as e:
-        print(f"Error obtaining user info for ID {usuario_id}: {e}")
-        return None 
+        return jsonify({"error": f"Error en la base de datos: {e}"}), 500
     
 def get_usuario_by_id_fire(connection, usuario_id):
     try:
@@ -44,8 +43,7 @@ def get_usuario_by_id_fire(connection, usuario_id):
       
             return usuario_info
     except Exception as e:
-        print(f"Error obtaining user info for ID {usuario_id}: {e}")
-        return None
+        return jsonify({"error": f"Error en la base de datos: {e}"}), 500
 
     
 @usuario_fl1.route('/<int:id_usuario>', methods=['GET'])

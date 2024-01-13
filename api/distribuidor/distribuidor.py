@@ -19,11 +19,14 @@ distribuidor_fl.register_blueprint(distribuidor_fl2,)
 def process_distribuidor(connection):
     try:
         with connection.cursor() as cursor:
-            sql_distribuidor = "SELECT * FROM distribuidor"
+            
+            sql_distribuidor = "SELECT * FROM distribuidor;"
+           
             cursor.execute(sql_distribuidor)
             distribuidores = resultados_a_json(cursor)
-            print(distribuidores)
+         
             for distribuidor in distribuidores:
+             
                 id_distribuidor = distribuidor['id_distribuidor']
 
                 # for key in ['created', 'lastUpdate']: 
@@ -67,7 +70,7 @@ def process_distribuidor(connection):
                 marcas = [marca['marca'] for marca in marcas_raw]  
 
                 distribuidor['marcas'] = marcas
-            print(distribuidores)
+            
             return distribuidores
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
@@ -80,9 +83,7 @@ def process_distribuidor(connection):
 def get_distribuidor():
     with connect_to_database() as connection:
         try:
-            # Obtener información de los pedidos del proveedor
             distribuidor = process_distribuidor(connection)
-            print(distribuidor)
             return jsonify({"success": True, "data": distribuidor})
         except Exception as e:
             return jsonify({"error": "Database error: {}".format(e)}), 500

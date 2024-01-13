@@ -16,7 +16,7 @@ def crear_usuario():
             
             if not all(campo in data for campo in campos_requeridos):
                 return jsonify({"error": "Faltan campos requeridos"}), 400
-            print(data)        
+              
             with connection.cursor() as cursor:
                 sql = """INSERT INTO usuario (
                              rol, nombres, apellidos, 

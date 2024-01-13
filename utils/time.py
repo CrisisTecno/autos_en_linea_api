@@ -1,5 +1,5 @@
 
-from datetime import datetime, time,timedelta
+from datetime import datetime, time,timedelta,date
 
 def timedelta_to_string(td):
     """Convierte un objeto timedelta a una cadena en formato HH:MM:SS."""
@@ -11,11 +11,14 @@ def timedelta_to_string(td):
         return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
     return None
 
-def timedelta_to_milliseconds(td):
-    """Convierte un objeto timedelta a milisegundos."""
-    if isinstance(td, timedelta):
-        return int(td.total_seconds() * 1000)
-    return 0
+# para convertir de int a date time
+def unix_to_datetime(unix_timestamp):
+    return datetime.utcfromtimestamp(unix_timestamp)
+
+def timedelta_to_milliseconds(hora_str):
+    hora =datetime.strptime(hora_str, '%H:%M:%S').time()
+    segundos_desde_medianoche = (hora.hour * 3600) + (hora.minute * 60) + hora.second
+    return segundos_desde_medianoche
 
 def convert_milliseconds_to_datetime(milliseconds):
     seconds = milliseconds / 1000.0

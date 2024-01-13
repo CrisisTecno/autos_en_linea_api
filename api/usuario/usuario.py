@@ -27,8 +27,7 @@ def process_usuario(connection):
             
             return usuario_results
     except Exception as e:
-        print(f"Error en la base de datos: {e}")  
-        return None 
+        return jsonify({"error": f"Error en la base de datos: {e}"}), 500
 
 
 @usuario_fl2.route('/favoritos/<int:id_usuario>', methods=['GET'])

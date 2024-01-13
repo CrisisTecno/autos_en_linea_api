@@ -57,13 +57,13 @@ def get_subespecificaciones_por_tipo(name_tipo):
             with connection.cursor() as cursor:
                 cursor.execute("SELECT id_especificacion FROM especificaciones_adm WHERE tipo = ?", (name_tipo,))
                 id_result = resultados_a_json(cursor, unico_resultado=True)
-                print(id_result)
+                
                 if id_result:
                     id_especificacion = id_result['id_especificacion']
-                    print(id_especificacion)
+                    
                     cursor.execute("SELECT clave, valor FROM subespecificaciones_adm WHERE id_especificacion = ?", (id_especificacion,))
                     subespecificaciones_raw = resultados_a_json(cursor)
-                    print(subespecificaciones_raw)
+                    
                     subespecificaciones = {item['clave']: item['valor'] for item in subespecificaciones_raw}
 
                     respuesta = {
@@ -175,7 +175,7 @@ def get_tipos_especificaciones():
                 tipos_raw  = resultados_a_json(cursor)
                 if tipos_raw:
                     tipos = [registro['tipo'] for registro in tipos_raw]
-                print(tipos)
+                
                 return jsonify(tipos)
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
@@ -561,7 +561,7 @@ def articulo_referencia(id_articulo):
                          WHERE a_s.id_articulo = ?"""
                 cursor.execute(sql, (id_articulo,))
                 sucursales_raw = resultados_a_json(cursor)
-                print(sucursales_raw)
+                
                 if not sucursales_raw:
                     return jsonify({"error": "No se encontraron sucursales para el artículo"}), 404
 

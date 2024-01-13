@@ -17,23 +17,31 @@ def serializar_valor(valor):
     """ Convierte valores no serializables en tipos serializables. """
     if isinstance(valor, datetime.datetime):
         # Convierte datetime a timestamp Unix (en segundos)
-        print(valor.timestamp())
+        # print("aca we awa")
+        # print(valor)
+        # print(valor.timestamp())
+       
         return int(valor.timestamp())
     elif isinstance(valor, datetime.date):
         # Convierte date a timestamp Unix (considerando la fecha con hora 00:00:00)
-        print(datetime.datetime.combine(valor, datetime.time(0, 0)).timestamp())
+        # print(valor)
+        # print(datetime.datetime.combine(valor, datetime.time(0, 0)).timestamp())
         return int(datetime.datetime.combine(valor, datetime.time(0, 0)).timestamp())
+    elif isinstance(valor,datetime.time):
+        return valor.strftime("%H:%M:%S")
     elif isinstance(valor, decimal.Decimal):
         # Convierte Decimal a float
+        
         return float(valor)
     else:
+     
         return valor
 
 def resultados_a_json(cursor, unico_resultado=False):
     """ Convierte los resultados de pyodbc a un formato JSON serializable. """
     columnas = [columna[0] for columna in cursor.description]
     resultados_crudos = cursor.fetchone() if unico_resultado else cursor.fetchall()
-
+    # print(resultados_crudos)
     if unico_resultado:
         if resultados_crudos is None:
             return None

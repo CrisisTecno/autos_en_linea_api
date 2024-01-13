@@ -1,3 +1,5 @@
+
+
 CREATE TABLE distribuidor (
     id_distribuidor INT PRIMARY KEY IDENTITY(1,1),
     gerente VARCHAR(255),

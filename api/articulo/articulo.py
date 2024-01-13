@@ -27,7 +27,7 @@ def get_articulos(connection):
         """
             cursor.execute(sql_articulo)
             raw_results = resultados_a_json(cursor)
-            print(raw_results)
+            
             articulo_results = {}
             processed_especificaciones = set()
             for row in raw_results:
@@ -90,8 +90,8 @@ def get_articulos(connection):
                 articulo_results[id_articulo]['id_sucursales'] = id_sucursales
                     
                 return list(articulo_results.values())
-    except Exception as ex:
-        print("Error durante la ejecución de la consulta:", ex)
+    except Exception as e:
+        return jsonify({"error": f"Error en la base de datos: {e}"}), 500
 
 
     
@@ -99,7 +99,7 @@ def get_articulos(connection):
 def get_articulos_all():
     try:
         with connect_to_database() as connection:
-            print(connection)
+          
             articulo = get_articulos(connection)
             return jsonify({"success": True, "data": articulo})
     except Exception as e:

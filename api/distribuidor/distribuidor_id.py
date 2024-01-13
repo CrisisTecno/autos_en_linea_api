@@ -68,7 +68,7 @@ def get_distribuidor_by_id(distribuidor_id):
     with connect_to_database() as con:
         try:
             distribuidor_by_id= process_distribuidor_por_id(con,distribuidor_id)
-            print(distribuidor_by_id)
+           
             if distribuidor_by_id:
                 return jsonify({"success": True, "data": distribuidor_by_id})
             else:

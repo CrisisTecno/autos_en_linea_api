@@ -15,8 +15,7 @@ def get_sucursal_basic(connection, sucursal_id):
             sucursal_info = cursor.fetchone()
             return sucursal_info
     except Exception as e:
-        print(f"Error obtaining sucursal info for ID {sucursal_id}: {e}")
-        return None
+        return jsonify({"error": f"Error en la base de datos: {e}"}), 500
 
 def get_sucursal_detail(connection, id_sucursal):
     try:
@@ -47,10 +46,8 @@ def get_sucursal_detail(connection, id_sucursal):
 
             return sucursal_info
     except Exception as e:
-        print(f"Error obtaining detailed sucursal info for ID {id_sucursal}: {e}")
-        return None
-    except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+
 
 def process_sucursal_por_id(connection, id_sucursal):
     try:

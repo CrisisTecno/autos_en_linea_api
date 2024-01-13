@@ -49,17 +49,17 @@ def crear_sucursal():
     try:
         with connect_to_database() as connection:
             data = request.json
-            print(data)
+           
             # Verificar la presencia de todos los campos, incluyendo los horarios
             campos_requeridos = ['direccion', 'nombre', 'gerente', 
                                  'contacto', 'correo_electronico', 'url_logo', 'coordenadas', 
                                  'horarioAtencion','created','lastUpdate','id_distribuidor']
             if not all(campo in data for campo in campos_requeridos) or not all(dia in data['horarioAtencion'] for dia in ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo']):
-                print("Campos en la solicitud:", data.keys())
-                print("Días en horarioAtencion:", data['horarioAtencion'].keys() if 'horarioAtencion' in data else "No está presente")
+                # print("Campos en la solicitud:", data.keys())
+                # print("Días en horarioAtencion:", data['horarioAtencion'].keys() if 'horarioAtencion' in data else "No está presente")
                 return jsonify({"error": "Faltan campos requeridos"}), 400
-            print(convert_milliseconds_to_datetime(data['created']))
-            print(convert_milliseconds_to_datetime(data['lastUpdate']))
+            # print(convert_milliseconds_to_datetime(data['created']))
+            # print(convert_milliseconds_to_datetime(data['lastUpdate']))
             with connection.cursor() as cursor:
                 # Insertar datos de la sucursal
                 sql_sucursal = """INSERT INTO sucursal (
