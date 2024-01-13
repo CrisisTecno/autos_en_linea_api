@@ -34,13 +34,13 @@ def get_usuario_by_id_fire(connection, usuario_id):
             sql_usuario = """SELECT * FROM usuario WHERE id_usuario_firebase = ?"""
             cursor.execute(sql_usuario, (usuario_id,))
             usuario_info = resultados_a_json(cursor, unico_resultado=True)
+            print(usuario_info)
+            # if usuario_info:
+            #     for key in ['created', 'lastUpdate']: 
+            #         if usuario_info[key]:
+            #             usuarios_info_2=convertir_a_datetime(usuario_info[key])
 
-            if usuario_info:
-                for key in ['created', 'lastUpdate']: 
-                    if usuario_info[key]:
-                        usuarios_info_2=convertir_a_datetime(usuario_info[key])
-
-                        usuario_info[key] = int(usuarios_info_2.timestamp() * 1000)
+            #             usuario_info[key] = int(usuarios_info_2.timestamp() * 1000)
       
             return usuario_info
     except Exception as e:
