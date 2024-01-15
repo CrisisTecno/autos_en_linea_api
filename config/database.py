@@ -30,7 +30,9 @@ def connect_to_database():
         print("Conexión establecida")
         yield connection
     except Exception as ex:
-        print("Error durante la conexión:", ex)
+        print(f"Error durante la conexión: {ex}")
+        print("Tipo de excepción:", type(ex))
+        print("Args de la excepción:", ex.args)
         if connection is not None:
             connection.close()
     finally:

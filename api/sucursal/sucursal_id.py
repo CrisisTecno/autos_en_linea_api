@@ -54,34 +54,26 @@ def process_sucursal_por_id(connection, id_sucursal):
         with connection.cursor() as cursor:
             sql_sucursal = "SELECT * FROM sucursal WHERE id_sucursal = ?;"
             cursor.execute(sql_sucursal, (id_sucursal,))
-            sucursal_record = cursor.fetchone()
-
+            sucursal_record = resultados_a_json(cursor, unico_resultado=True)
+            print(sucursal_record)
             if sucursal_record:
-                for key in ['created', 'lastUpdate']:
-                    if sucursal_record[key]:
-                        sucursal_record[key] = int(sucursal_record[key].timestamp() * 1000)
 
                 sql_sucursales_imagenes = "SELECT * FROM images_sucursal WHERE id_sucursal = ?;"
                 cursor.execute(sql_sucursales_imagenes, (id_sucursal,))
                 sucursal_images = resultados_a_json(cursor)
+                print(sucursal_images)
                 sucursal_record['sucursal_images'] = sucursal_images
 
-                sql_articulos = """SELECT articulo.* FROM articulo
+                sql_articulos = """SELECT articulo.ano,articulo.categoria, articulo.color,articulo.created,articulo.descripcion,
+                    articulo.enable,articulo.id_articulo,
+                    articulo.kilometraje,articulo.lastInventoryUpdate,articulo.lastUpdate,articulo.mainImage,
+                    articulo.marca,articulo.modelo,articulo.precio
+                    FROM articulo 
                                    JOIN articulo_sucursal ON articulo.id_articulo = articulo_sucursal.id_articulo
                                    WHERE articulo_sucursal.id_sucursal = ?;"""
                 cursor.execute(sql_articulos, (id_sucursal,))
                 articulos_list = resultados_a_json(cursor)
-
-                for articulo in articulos_list:
-                    for key in ['created', 'lastUpdate', 'lastInventoryUpdate']:
-                        if articulo[key]:
-
-                            usuarios_info_2=convertir_a_datetime(articulo[key])
-
-                            articulo[key] = int(usuarios_info_2.timestamp() * 1000)
-
-        
-
+                print(articulos_list)
                 sucursal_record['sucursal_articulos'] = articulos_list
                 sql_horarios_sucursal = "SELECT * FROM horarios_sucursal WHERE id_sucursal = ?"
                 cursor.execute(sql_horarios_sucursal, (id_sucursal,))
@@ -90,11 +82,17 @@ def process_sucursal_por_id(connection, id_sucursal):
                 for horario in horarios_raw:
                     dia = horario['day']
                     horarios_sucursal[dia] = {
-                        'open': timedelta_to_milliseconds(horario['open']),
-                        'close': timedelta_to_milliseconds(horario['close'])
+                        'open': int(timedelta_to_milliseconds(horario['open'])),
+                        'close': int(timedelta_to_milliseconds(horario['close']))
                     }
 
                 sucursal_record['horarios_sucursal'] = horarios_sucursal
+
+                sql_distribuidor = "SELECT * FROM distribuidor_sucursal WHERE id_sucursal = ?"
+                cursor.execute(sql_distribuidor, (id_sucursal,))
+                distribuidores_raw  = resultados_a_json(cursor)
+                sucursal_record['distribuidores'] =[distribuidor['id_distribuidor'] for distribuidor in distribuidores_raw]
+
             return sucursal_record
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500

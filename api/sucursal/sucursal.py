@@ -24,12 +24,6 @@ def process_sucursal(connection):
 
             for sucursal_record in sucursal_results:
 
-                for key in ['created', 'lastUpdate']: 
-                    if sucursal_record[key]:
-                        sucursal_record_2=convertir_a_datetime(sucursal_record[key])
-                        sucursal_record[key] = int(sucursal_record_2.timestamp() * 1000)
-
-
                 id_sucursal = sucursal_record['id_sucursal']
 
                 sql_sucursales_imagenes = """SELECT * FROM images_sucursal
@@ -47,11 +41,6 @@ def process_sucursal(connection):
                                    WHERE articulo_sucursal.id_sucursal = ?;"""
                 cursor.execute(sql_articulos, (id_sucursal,))
                 articulos_list = resultados_a_json(cursor)
-                for articulos in articulos_list:
-                    for key in ['created', 'lastUpdate']: 
-                        if articulos[key]:
-                            usuarios_info_2=convertir_a_datetime(articulos[key])
-                            articulos[key] = int(usuarios_info_2.timestamp() * 1000)
 
                 sucursal_record['sucursal_articulos'] = articulos_list
 
@@ -64,9 +53,15 @@ def process_sucursal(connection):
                     horarios_sucursal[dia] = {
                         'open': timedelta_to_milliseconds(horario['open']),
                         'close': timedelta_to_milliseconds(horario['close'])
+                        # 'open': horario['open'],
+                        # 'close': horario['close']
                     }
-
                 sucursal_record['horarios_sucursal'] = horarios_sucursal
+
+                sql_distribuidor = "SELECT * FROM distribuidor_sucursal WHERE id_sucursal = ?"
+                cursor.execute(sql_distribuidor, (id_sucursal,))
+                distribuidores_raw  = resultados_a_json(cursor)
+                sucursal_record['distribuidores'] =[distribuidor['id_distribuidor'] for distribuidor in distribuidores_raw]
 
             return sucursal_results
     except Exception as e:
@@ -79,7 +74,6 @@ def process_sucursal(connection):
 def get_sucursal_all():
     with connect_to_database() as connection:
         try:
-            # Obtener información de los pedidos del proveedor
             sucursales = process_sucursal(connection)
             return jsonify({"success": True, "data": sucursales})
         except Exception as e:

@@ -81,14 +81,27 @@ def eliminar_usuario(id_usuario):
     try:
         with connect_to_database() as connection:
             with connection.cursor() as cursor:
-                sql_delete = "DELETE FROM usuario WHERE id_usuario = ?"
-                cursor.execute(sql_delete, (id_usuario,))
+                # Eliminar registros de actividades del usuario
+                sql_delete_actividades_usuario = "DELETE FROM registro_actividades_usuario WHERE id_usuario = ?"
+                cursor.execute(sql_delete_actividades_usuario, (id_usuario,))
+
+                # Eliminar registros de favoritos asociados al usuario
+                sql_delete_favoritos = "DELETE FROM favoritos WHERE id_usuario = ?"
+                cursor.execute(sql_delete_favoritos, (id_usuario,))
+
+                # Si hay otros registros relacionados en otras tablas, inclúyelos aquí
+
+                # Finalmente, eliminar el usuario
+                sql_delete_usuario = "DELETE FROM usuario WHERE id_usuario = ?"
+                cursor.execute(sql_delete_usuario, (id_usuario,))
+                
                 connection.commit()
 
-            return jsonify({"success": True, "message": f"Usuario con ID {id_usuario} eliminado exitosamente"}), 200
+            return jsonify({"success": True, "message": f"Usuario con ID {id_usuario} y registros relacionados eliminados exitosamente"}), 200
 
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+
 
 
 @usuario_fl2.route('/usuario_existe', methods=['GET'])

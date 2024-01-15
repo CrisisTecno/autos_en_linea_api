@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from flask import Blueprint
 from config.database import connect_to_database
-from utils.time import convert_milliseconds_to_datetime,convert_milliseconds_to_time_string
+from utils.time import unix_to_datetime,convert_milliseconds_to_datetime,timedelta_to_milliseconds,convert_milliseconds_to_time_string
 from api.distribuidor.distribuidor_methods import procesar_articulo
 from datetime import datetime
 from utils.serializer import resultados_a_json, convertir_a_datetime
@@ -50,22 +50,19 @@ def crear_sucursal():
         with connect_to_database() as connection:
             data = request.json
            
-            # Verificar la presencia de todos los campos, incluyendo los horarios
             campos_requeridos = ['direccion', 'nombre', 'gerente', 
                                  'contacto', 'correo_electronico', 'url_logo', 'coordenadas', 
                                  'horarioAtencion','created','lastUpdate','id_distribuidor']
+            
             if not all(campo in data for campo in campos_requeridos) or not all(dia in data['horarioAtencion'] for dia in ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo']):
-                # print("Campos en la solicitud:", data.keys())
-                # print("Días en horarioAtencion:", data['horarioAtencion'].keys() if 'horarioAtencion' in data else "No está presente")
                 return jsonify({"error": "Faltan campos requeridos"}), 400
-            # print(convert_milliseconds_to_datetime(data['created']))
-            # print(convert_milliseconds_to_datetime(data['lastUpdate']))
+            
             with connection.cursor() as cursor:
-                # Insertar datos de la sucursal
+
                 sql_sucursal = """INSERT INTO sucursal (
                                       direccion, nombre, gerente, contacto, 
                                       correo_electronico, url_logo, coordenadas,created,lastUpdate
-                                  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+                                  )OUTPUT INSERTED.id_sucursal VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"""
                 valores_sucursal = (
                     data['direccion'],
                     data['nombre'],
@@ -74,21 +71,21 @@ def crear_sucursal():
                     data['correo_electronico'],
                     data['url_logo'],
                     data['coordenadas'],
-                    convert_milliseconds_to_datetime(data['created']),
-                    convert_milliseconds_to_datetime(data['lastUpdate'])
+                    unix_to_datetime(data['created']),
+                    unix_to_datetime(data['lastUpdate'])
                     # data['id_distribuidor']
                 )
                 cursor.execute(sql_sucursal, valores_sucursal)
 
-                id_sucursal = cursor.lastrowid 
-
-                sql_distribuidor_sucursal = """INSERT INTO distribuidor_sucursal (id_distribuidor, id_sucursal)
-                                               VALUES (?, ?)"""
-                valores_distribuidor_sucursal = (data['id_distribuidor'], id_sucursal)
-                cursor.execute(sql_distribuidor_sucursal, valores_distribuidor_sucursal)
+                id_sucursal = cursor.fetchone()[0] 
+                if 'id_distribuidor' in data:
+                    sql_distribuidor_sucursal = """INSERT INTO distribuidor_sucursal (id_distribuidor, id_sucursal)
+                                                VALUES (?, ?)"""
+                    valores_distribuidor_sucursal = (data['id_distribuidor'], id_sucursal)
+                    cursor.execute(sql_distribuidor_sucursal, valores_distribuidor_sucursal)
 
                 for dia, horarios in data['horarioAtencion'].items():
-                    sql_horarios = """INSERT INTO horarios_sucursal (id_sucursal, day, open, close) 
+                    sql_horarios = """INSERT INTO horarios_sucursal (id_sucursal, day, [open], [close]) 
                                       VALUES (?, ?, ?, ?)"""
                     valores_horarios = (id_sucursal, dia, 
                     convert_milliseconds_to_time_string(horarios['open']),
@@ -102,11 +99,11 @@ def crear_sucursal():
 
                 connection.commit()
 
-            return jsonify({"success": True, "message": "Sucursal creada exitosamente"}), 201
+            return jsonify({"success": True, "message": "Sucursal creada exitosamente","ID SUCURSAL":id_sucursal}), 201
 
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
-
+#/
 @sucursal_fl2.route('/sucursal/<int:id_sucursal>', methods=['PUT'])
 def actualizar_sucursal(id_sucursal):
     try:
@@ -115,7 +112,7 @@ def actualizar_sucursal(id_sucursal):
             campos_permitidos = ['contacto', 'coordenadas', 
                                  'correo_electronico', 'direccion', 'gerente', 
                                    
-                                 'nombre',
+                                 'nombre','id_distribuidor'
                                  'sucursal_images','telefono','url_logo','horarios_sucursal']
             
             if not any(campo in data for campo in campos_permitidos):
@@ -127,38 +124,36 @@ def actualizar_sucursal(id_sucursal):
 
                 for campo in campos_permitidos:
                     if campo in data:
+                        valor = data[campo]
+                        if campo in ['created', 'lastUpdate']:
+                            valor = unix_to_datetime(valor)
                         sql_update += f"{campo} = ?, "
-                        valores.append(data[campo])
-
-                # sql_update += "lastUpdate = ? WHERE id_sucursal = ?"
-                # valores.append(convert_milliseconds_to_datetime(data.get('lastUpdate', int(datetime.now().timestamp() * 1000))))
-                # valores.append(id_sucursal)
-
-                last_update = datetime.now().strftime('%Y-%m-%d %H:%M:?')
-                sql_update += "lastUpdate = ? WHERE id_sucursal = ?"
-                valores.append(last_update)
+                        valores.append(valor)
+                
+                sql_update = sql_update.rstrip(', ')
+                sql_update += " WHERE id_sucursal = ?"
                 valores.append(id_sucursal)
-
+           
                 cursor.execute(sql_update, valores)
 
-                if 'horarioAtencion' in data:
-                    for dia, horarios in data['horarioAtencion'].items():
-                        sql_horarios = """UPDATE horarios_sucursal 
-                                          SET open = ?, close = ? 
-                                          WHERE id_sucursal = ? AND day = ?"""
-                        valores_horarios = (convert_milliseconds_to_time_string(horarios['open']),
-                                            convert_milliseconds_to_time_string(horarios['close']),
-                                            id_sucursal, dia)
-                        cursor.execute(sql_horarios, valores_horarios)
+                # if 'horarioAtencion' in data:
+                #     for dia, horarios in data['horarioAtencion'].items():
+                #         sql_horarios = """UPDATE horarios_sucursal 
+                #                           SET open = ?, close = ? 
+                #                           WHERE id_sucursal = ? AND day = ?"""
+                #         valores_horarios = (timedelta_to_milliseconds(horarios['open']),
+                #                             timedelta_to_milliseconds(horarios['close']),
+                #                             id_sucursal, dia)
+                #         cursor.execute(sql_horarios, valores_horarios)
 
-                if 'imagenes' in data:
-                    sql_eliminar_imagenes = "DELETE FROM images_sucursal WHERE id_sucursal = ?"
-                    cursor.execute(sql_eliminar_imagenes, (id_sucursal,))
+                # if 'imagenes' in data:
+                #     sql_eliminar_imagenes = "DELETE FROM images_sucursal WHERE id_sucursal = ?"
+                #     cursor.execute(sql_eliminar_imagenes, (id_sucursal,))
 
-                    for imagen in data['imagenes']:
-                        sql_insertar_imagen = """INSERT INTO images_sucursal (url_image, descripcion, id_sucursal) 
-                                                 VALUES (?, ?, ?)"""
-                        cursor.execute(sql_insertar_imagen, (imagen['url_image'], imagen['descripcion'], id_sucursal))   
+                #     for imagen in data['imagenes']:
+                #         sql_insertar_imagen = """INSERT INTO images_sucursal (url_image, descripcion, id_sucursal) 
+                #                                  VALUES (?, ?, ?)"""
+                #         cursor.execute(sql_insertar_imagen, (imagen['url_image'], imagen['descripcion'], id_sucursal))   
 
                 connection.commit()
 
@@ -174,14 +169,28 @@ def eliminar_sucursal(id_sucursal):
     try:
         with connect_to_database() as connection:
             with connection.cursor() as cursor:
-                sql_delete = "DELETE FROM sucursal WHERE id_sucursal = ?"
-                cursor.execute(sql_delete, (id_sucursal,))
+                sql_delete_distribuidor_sucursal = "DELETE FROM distribuidor_sucursal WHERE id_sucursal = ?"
+                cursor.execute(sql_delete_distribuidor_sucursal, (id_sucursal,))
+
+                sql_delete_images_sucursal = "DELETE FROM images_sucursal WHERE id_sucursal = ?"
+                cursor.execute(sql_delete_images_sucursal, (id_sucursal,))
+
+                sql_delete_articulo_sucursal = "DELETE FROM articulo_sucursal WHERE id_sucursal = ?"
+                cursor.execute(sql_delete_articulo_sucursal, (id_sucursal,))
+
+                sql_delete_horarios_sucursal = "DELETE FROM horarios_sucursal WHERE id_sucursal = ?"
+                cursor.execute(sql_delete_horarios_sucursal, (id_sucursal,))
+
+                sql_delete_sucursal = "DELETE FROM sucursal WHERE id_sucursal = ?"
+                cursor.execute(sql_delete_sucursal, (id_sucursal,))
+
                 connection.commit()
 
-            return jsonify({"success": True, "message": f"Sucursal con ID {id_sucursal} eliminada exitosamente"}), 200
+            return jsonify({"success": True, "message": f"Sucursal con ID {id_sucursal} y registros relacionados eliminados exitosamente"}), 200
 
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+
     
 @sucursal_fl2.route('/<int:id_sucursal>/imagen', methods=['POST'])
 def agregar_imagen_sucursal(id_sucursal):
@@ -190,17 +199,16 @@ def agregar_imagen_sucursal(id_sucursal):
             data = request.json
             campos_requeridos = ['url_image', 'descripcion']
 
-            if not all(campo in data for campo in campos_requeridos):
-                return jsonify({"error": "Faltan campos requeridos"}), 400
+            if not all(isinstance(articulo, dict) and all(campo in articulo for campo in campos_requeridos) for articulo in data):
+                return jsonify({"error": "Faltan campos requeridos o formato incorrecto"}), 400
 
             with connection.cursor() as cursor:
                 sql = """INSERT INTO images_sucursal (url_image, descripcion, id_sucursal) 
                          VALUES (?, ?, ?)"""
-                valores = (
-                    data['url_image'],
-                    data['descripcion'],
-                    id_sucursal  
-                )
+                for articulo in data:
+                    valores = (articulo['url_image'], articulo['descripcion'], id_sucursal)
+                    cursor.execute(sql, valores)
+
                 cursor.execute(sql, valores)
                 connection.commit()
 
@@ -265,17 +273,12 @@ def obtener_usuarios_por_distribuidor(id_sucursal):
             with connection.cursor() as cursor:
               
                 sql = """
-                    SELECT apellidos,coordenadas,correo_electronico,created,id_sucursal,id_sucursal
-                    id_usuario,id_usuario_firebase,lastUpdate,nombres,num_telefono,rol,url_logo  FROM usuario
+                    SELECT *  FROM usuario
                     WHERE id_sucursal = ?
                 """
                 cursor.execute(sql, (id_sucursal,))
                 usuarios = resultados_a_json(cursor)
-                print(usuarios)
-                for user in usuarios:
-                    for key in ['created', 'lastUpdate']:
-                        if user[key]:
-                            user[key] = int(user[key].timestamp() * 1000)
+
                     
                 if not usuarios:
                     return jsonify({"error": f"No se encontraron usuarios para el distribuidor con ID {id_sucursal}"}), 404

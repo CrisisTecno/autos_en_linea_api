@@ -1,47 +1,11 @@
 from flask import Flask, request, jsonify
 from flask import Blueprint
 from config.database import connect_to_database
-from utils.time import convert_milliseconds_to_datetime,convert_milliseconds_to_time_string
+from utils.time import convert_milliseconds_to_datetime,unix_to_datetime,convert_milliseconds_to_time_string
+from utils.coordenadas import obtener_sucursales_cercanas
 from datetime import datetime
 articulo_fl2 = Blueprint('articulo_post', __name__)
 from utils.serializer import resultados_a_json, convertir_a_datetime
-
-# @articulo_fl2.route('/articulo', methods=['POST'])
-# def crear_articulo():
-#     try:
-#         with connect_to_database() as connection:
-#             data = request.json
-#             campos_requeridos = ['marca', 'modelo', 'categoria', 'ano', 
-#                                  'precio', 'kilometraje', 'descripcion', 'enable', 'color']
-
-#             if not all(campo in data for campo in campos_requeridos):
-#                 return jsonify({"error": "Faltan campos requeridos"}), 400
-
-#             with connection.cursor() as cursor:
-#                 sql = """INSERT INTO articulo (
-#                              marca, modelo, categoria, ano, precio, 
-#                              kilometraje, descripcion, enable, color
-#                          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"""
-#                 valores = (
-#                     data['marca'],
-#                     data['modelo'],
-#                     data['categoria'],
-#                     data['ano'],
-#                     data['precio'],
-#                     data['kilometraje'],
-#                     data['descripcion'],
-#                     data['enable'],
-#                     data['color']
-#                 )
-#                 cursor.execute(sql, valores)
-#                 connection.commit()
-#                 rows_affected = cursor.rowcount
-
-#             return jsonify({"success": True, "message": "Artículo creado exitosamente"}), 201
-
-#     except Exception as e:
-#         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
-
 
 
 def get_default_expedition_date():
@@ -50,6 +14,74 @@ def get_default_expedition_date():
     timestamp_milliseconds = int(timestamp_seconds * 1000)
     return timestamp_milliseconds
 
+@articulo_fl2.route('/articulo', methods=['POST'])
+def crear_articulo():
+    try:
+        with connect_to_database() as connection:
+            data = request.json
+            expedition_date = data['expedition_date'] if 'expedition_date' in data else get_default_expedition_date()
+            campos_requeridos = ['ano', 'categoria', 'color', 
+                                 'descripcion', 'enable', 'mainImage', 'marca', 
+                                 'modelo','precio','created',
+                                 'lastUpdate','lastInventoryUpdate','kilometraje']   
+            if not all(campo in data for campo in campos_requeridos):
+                return jsonify({"error": "Faltan campos requeridos"}), 400
+                
+            with connection.cursor() as cursor:
+                sql_articulo = """INSERT INTO articulo (
+                                      ano, categoria, color, descripcion, [enable], mainImage, 
+                                      marca, modelo, precio, espedition_date, 
+                                      created, lastUpdate, lastInventoryUpdate, kilometraje
+                                  ) OUTPUT INSERTED.id_articulo VALUES (?, ?, ?, ?, ?, ?, ?, ?,  ?, ?, ?, ?, ?, ?);
+                                  """
+                # print(sql_articulo)
+                # print(unix_to_datetime(data['expedition_date']))
+                valores_articulo = (
+                    data['ano'], 
+                    data['categoria'], 
+                    data['color'], 
+                    data['descripcion'],
+                    data['enable'], 
+                    data['mainImage'],
+                    data['marca'], 
+                    data['modelo'],
+                    data['precio'], 
+                    unix_to_datetime(data['expedition_date']),
+                    unix_to_datetime(data['created']),
+                    unix_to_datetime(data['lastUpdate']), 
+                    unix_to_datetime(data['lastInventoryUpdate']), 
+                    data['kilometraje']
+                )
+                # print(valores_articulo)
+                cursor.execute(sql_articulo, valores_articulo)
+                id_articulo = cursor.fetchone()[0]
+                # print(id_articulo)
+                if 'sucursal_id' in data:
+                    sql_articulo_sucursal = """INSERT INTO articulo_sucursal (id_articulo, id_sucursal) VALUES (?, ?)"""
+                    cursor.execute(sql_articulo_sucursal, (id_articulo, data['sucursal_id']))
+                    
+                if 'especificaciones' in data:
+                    for especificacion in data['especificaciones']:
+                        sql_especificaciones = """INSERT INTO especificaciones (tipo, id_articulo) 
+                        OUTPUT INSERTED.id_especificacion VALUES (?, ?)"""
+                        cursor.execute(sql_especificaciones, (especificacion['tipo'], id_articulo))
+                        id_especificacion = cursor.fetchone()[0]
+
+                        for clave, valor in especificacion['subespecificaciones'].items():
+                            sql_subespecificaciones = """INSERT INTO subespecificaciones (clave, valor, id_especificacion) VALUES (?, ?, ?)"""
+                            cursor.execute(sql_subespecificaciones, (clave, valor, id_especificacion))
+
+                if 'imagenes' in data:
+                    for imagen in data['imagenes']:
+                        sql_images_articulo = """INSERT INTO images_articulo (url_image, descripcion, id_articulo) VALUES (?, ?, ?)"""
+                        cursor.execute(sql_images_articulo, (imagen['url_image'], imagen['descripcion'], id_articulo))
+
+                connection.commit()
+            return jsonify({"success": True, "message": "Artículo creado exitosamente", "id_articulo": id_articulo}), 201
+
+    except Exception as e:
+        return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+    
 @articulo_fl2.route('/especificaciones/<string:name_tipo>', methods=['GET'])
 def get_subespecificaciones_por_tipo(name_tipo):
     try:
@@ -90,8 +122,10 @@ def options_filter():
         consulta3 = "SELECT DISTINCT marca FROM articulo ORDER BY marca"
         consulta4 = "SELECT DISTINCT modelo FROM articulo ORDER BY modelo"
         consulta5 = "SELECT DISTINCT color FROM articulo ORDER BY color"
+        consulta6 = "SELECT DISTINCT kilometraje FROM articulo ORDER BY kilometraje"
+        consulta7 = "SELECT DISTINCT precio FROM articulo ORDER BY precio"
 
-        opciones = {'ano': [], 'categoria': [], 'marca': [], 'modelo': [], 'color': []}
+        opciones = {'ano': [], 'categoria': [], 'marca': [], 'modelo': [], 'color': [], 'precio':[], 'kilometraje':[]}
 
         with connect_to_database() as connection:
             with connection.cursor() as cursor:
@@ -120,12 +154,22 @@ def options_filter():
                 resultados = resultados_a_json(cursor)
                 opciones['color'] = [color['color'] for color in resultados if color['color'] is not None]
 
+                # Color
+                cursor.execute(consulta6)
+                resultados = resultados_a_json(cursor)
+                opciones['kilometraje'] = [kilometraje['kilometraje'] for kilometraje in resultados if kilometraje['kilometraje'] is not None]
+
+                # Color
+                cursor.execute(consulta7)
+                resultados = resultados_a_json(cursor)
+                opciones['precio'] = [precio['precio'] for precio in resultados if precio['precio'] is not None]
+
         return jsonify(opciones)           
 
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
    
-      
+#FALTA DOCUMENTAR
 @articulo_fl2.route('/filters', methods=['GET'])
 def buscar_articulos():
     try:
@@ -135,10 +179,37 @@ def buscar_articulos():
         modelos = request.args.getlist('modelo')
         colores = request.args.getlist('color')
         precio = request.args.getlist('price')
+        latitud_usuario = request.args.get('latitud')
+        longitud_usuario = request.args.get('longitud')
+        radio = request.args.get('radio')
+        distribuidor_id = request.args.get('distribuidor_id')
+        sucursal_id = request.args.get('sucursal_id')
 
-        consulta = "SELECT * FROM articulo WHERE 1=1"
+        # consulta = "SELECT articulo.*, sucursal.coordenadas FROM articulo " \
+        #            "JOIN articulo_sucursal ON articulo.id_articulo = articulo_sucursal.id_articulo " \
+        #            "JOIN sucursal ON articulo_sucursal.id_sucursal = sucursal.id_sucursal " \
+        #            "WHERE 1=1"
+        # consulta = "SELECT a.*, s.coordenadas FROM articulo a " \
+        #    "JOIN articulo_sucursal asu ON a.id_articulo = asu.id_articulo " \
+        #    "JOIN sucursal s ON asu.id_sucursal = s.id_sucursal " \
+        #    "JOIN distribuidor_sucursal sd ON s.id_sucursal = sd.id_sucursal " \
+        #    "WHERE 1=1"
+        #    "ORDER BY articulo.id_articulo" \
+        consulta = "SELECT articulo.*, sucursal.coordenadas,e.id_especificacion, e.tipo, img.url_image, img.descripcion as img_descripcion FROM articulo " \
+           "LEFT JOIN especificaciones e ON articulo.id_articulo = e.id_articulo " \
+           "LEFT JOIN images_articulo img ON articulo.id_articulo = img.id_articulo " \
+           "JOIN articulo_sucursal ON articulo.id_articulo = articulo_sucursal.id_articulo " \
+           "JOIN sucursal ON articulo_sucursal.id_sucursal = sucursal.id_sucursal " \
+           "JOIN distribuidor_sucursal ON sucursal.id_sucursal = distribuidor_sucursal.id_sucursal " \
+           "WHERE 1=1"
         parametros = []
+        if distribuidor_id:
+            consulta += " AND distribuidor_sucursal.id_distribuidor = ?"
+            parametros.append(int(distribuidor_id))
 
+        if sucursal_id:
+            consulta += " AND sucursal.id_sucursal = ?"
+            parametros.append(int(sucursal_id))
         if anos:
             consulta += f" AND ano IN ({','.join(['?'] * len(anos))})"
             parametros.extend(anos)
@@ -156,30 +227,94 @@ def buscar_articulos():
             parametros.extend(colores)
         if precio:
             consulta += " AND precio <= ?"
-            parametros.extend(precio) 
+            parametros.extend([float(p) for p in precio])
+
+        if latitud_usuario and longitud_usuario and radio: 
+            with connect_to_database() as connection:
+                with connection.cursor() as cursor:       
+           
+                    sql_sucursal = """SELECT * FROM sucursal;"""
+                    cursor.execute(sql_sucursal)
+                    sucursal_results = resultados_a_json(cursor)
+                    sucursales_cercanas=obtener_sucursales_cercanas(latitud_usuario,longitud_usuario,radio,sucursal_results)
+                    ids_sucursales_cercanas = [sucursal["id_sucursal"] for sucursal in sucursales_cercanas]
+
+                    if sucursales_cercanas!=[]:
+                        consulta += f" AND articulo_sucursal.id_sucursal IN ({','.join(['?'] * len(ids_sucursales_cercanas))})"
+                        parametros.extend(ids_sucursales_cercanas)
+
 
         with connect_to_database() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(consulta, parametros)
-                resultados = resultados_a_json(cursor)
-                return jsonify(resultados)
+                raw_results = resultados_a_json(cursor)
+                articulo_results = {}
+                processed_especificaciones = set()
+                for row in raw_results:
+                    id_articulo = row['id_articulo']
+                    # print(id_articulo)
+                    id_especificacion = row.get('id_especificacion')
+                    if id_articulo not in articulo_results:
+                        articulo_results[id_articulo] = {
+                            'id_articulo': id_articulo,
+                            'marca': row['marca'],
+                            'modelo': row['modelo'],
+                            'categoria': row['categoria'],
+                            'ano': row['ano'],
+                            'precio': row['precio'],
+                            'kilometraje': row['kilometraje'],
+                            'created': row['created'],
+                            'lastUpdate': row['lastUpdate'],
+                            'lastInventoryUpdate': row['lastInventoryUpdate'],
+                            'enable': row['enable'],
+                            'descripcion': row['descripcion'],
+                            'enable': row['enable'],
+                            'color': row['color'],
+                            'mainImage': row['mainImage'],
+                            'especificaciones': [],
+                            'imagenes': []
+                        }
+
+                    if id_especificacion and id_especificacion not in processed_especificaciones:
+                        processed_especificaciones.add(id_especificacion)
+
+                        sql_subespecificaciones = """
+                            SELECT * FROM subespecificaciones
+                            WHERE id_especificacion = ?
+                        """
+                        cursor.execute(sql_subespecificaciones, (id_especificacion,))
+                        subespecificaciones_raw = resultados_a_json(cursor)
+
+                        subespecificaciones = {sub['clave']: sub['valor'] for sub in subespecificaciones_raw}
+                        especificacion = {
+                            'tipo': row['tipo'],
+                            'subespecificaciones': subespecificaciones
+                        }
+                        articulo_results[id_articulo]['especificaciones'].append(especificacion)
+
+                    url_image = row.get('url_image')
+                    descripcion = row.get('descripcion')
+                    if url_image and not any(img['url_image'] == url_image for img in articulo_results[id_articulo]['imagenes']):
+                        imagen = {
+                                'url_image': url_image,
+                                'descripcion': descripcion,
+                        }
+                        articulo_results[id_articulo]['imagenes'].append(imagen)
+
+                    sql_sucursales = """
+                                SELECT id_sucursal FROM articulo_sucursal
+                                WHERE id_articulo = ?
+                            """
+                    cursor.execute(sql_sucursales, (id_articulo,))
+                    sucursales = resultados_a_json(cursor)
+                    id_sucursales = [sucursal['id_sucursal'] for sucursal in sucursales]
+                    articulo_results[id_articulo]['id_sucursales'] = id_sucursales
+                        
+                return list(articulo_results.values())
+                
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
 
-@articulo_fl2.route('/especificaciones', methods=['GET'])
-def get_tipos_especificaciones():
-    try:
-        with connect_to_database() as connection:
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT tipo FROM especificaciones_adm")
-                tipos_raw  = resultados_a_json(cursor)
-                if tipos_raw:
-                    tipos = [registro['tipo'] for registro in tipos_raw]
-                
-                return jsonify(tipos)
-    except Exception as e:
-        return jsonify({"error": f"Error en la base de datos: {e}"}), 500
-    
 @articulo_fl2.route('/subespecificaciones', methods=['GET'])
 def get_tipos_sub_especificaciones():
     try:
@@ -192,44 +327,32 @@ def get_tipos_sub_especificaciones():
                 return jsonify({"especificaciones": subespecificaciones})
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
-
     
-# @articulo_fl2.route('/articulo/<int:id_articulo>', methods=['PUT'])
-# def actualizar_articulo(id_articulo):
-# @articulo_fl2.route('/especificaciones/<int:id_especificacion>', methods=['GET'])
-# def get_tipos_especificaciones_by_id(id_especificacion):
-#     try:
-#         with connect_to_database() as connection:
-#             with connection.cursor() as cursor:
-#                 # Obtener el tipo de la especificación
-#                 cursor.execute("SELECT *.tipo FROM especificaciones_adm")
-#                 tipos = resultados_a_json(cursor, unico_resultado=True)
+@articulo_fl2.route('/especificaciones', methods=['POST'])
+def post_especificaciones():
+    data = request.json
+    try:
+        with connect_to_database() as connection:
+            with connection.cursor() as cursor:
+                for especificacion in data['especificaciones']:
+                    sql_especificaciones = """INSERT INTO especificaciones_adm (tipo) OUTPUT INSERTED.id_especificacion VALUES  (?)"""
+                    cursor.execute(sql_especificaciones, (especificacion['tipo'],))
+                    id_especificacion = cursor.fetchone()[0]
 
-#                 cursor.execute("SELECT tipo FROM especificaciones_adm WHERE id_especificacion = ?", (id_especificacion,))
-#                 tipo_raw = resultados_a_json(cursor, unico_resultado=True)
-#                 if not tipo_raw:
-#                     return jsonify({"error": "Especificación no encontrada"}), 404
-#                 tipo = tipo_raw['tipo']
-#                 cursor.execute("SELECT clave, valor FROM subespecificaciones_adm WHERE id_especificacion = ?", (id_especificacion,))
-#                 subespecificaciones_raw = resultados_a_json(cursor)
-#                 subespecificaciones = {registro['clave']: registro['valor'] for registro in subespecificaciones_raw}
+                    for clave, valor in especificacion['subespecificaciones'].items():
+                        sql_subespecificaciones = """INSERT INTO subespecificaciones_adm (clave, valor, id_especificacion) VALUES (?, ?, ?)"""
+                        cursor.execute(sql_subespecificaciones, (clave, valor, id_especificacion))
 
-#                 # Obtener marcas
-#                 cursor.execute("SELECT marca FROM marcas_adm WHERE id_especificacion = ?", (id_especificacion,))
-#                 marcas_raw = resultados_a_json(cursor)
-#                 marcas = [registro['marca'] for registro in marcas_raw]
-#                 respuesta = {
-#                     "especificaciones": [
-#                         {
-#                             "tipo": tipo,
-#                             "subespecificaciones": subespecificaciones,
-#                             "marcas": marcas
-#                         }
-#                     ]
-#                 }
-#                 return jsonify(respuesta)
-#     except Exception as e:
-#         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+                    for marca in especificacion.get('marcas', []):
+                        sql_marcas = """INSERT INTO marcas_adm (marca, id_especificacion) VALUES (?, ?)"""
+                        cursor.execute(sql_marcas, (marca, id_especificacion))
+
+                    connection.commit()
+
+            return jsonify({"success": True, "message": "Especificacion creado exitosamente" ,"id_especificacion": id_especificacion}), 201
+
+    except Exception as e:
+        return jsonify({"error": f"Error en la base de datos: {e}"}), 500
     
 @articulo_fl2.route('/especificaciones', methods=['GET'])
 def get_todas_especificaciones():
@@ -256,6 +379,7 @@ def get_todas_especificaciones():
                     marcas = [registro['marca'] for registro in marcas_raw]
 
                     especificaciones.append({
+                        "id_especificacion":id_especificacion,
                         "tipo": tipo,
                         "subespecificaciones": subespecificaciones,
                         "marcas": marcas
@@ -268,155 +392,68 @@ def get_todas_especificaciones():
 @articulo_fl2.route('/especificaciones/<int:id_especificacion>', methods=['PUT'])
 def actualizar_especificacion(id_especificacion):
     try:
-        # Obtener los datos enviados en la solicitud
+        
         datos = request.get_json()
 
         with connect_to_database() as connection:
             with connection.cursor() as cursor:
-                # Actualizar datos de la especificación
                 if 'tipo' in datos:
                     cursor.execute("UPDATE especificaciones_adm SET tipo = ? WHERE id_especificacion = ?", (datos['tipo'], id_especificacion))
 
-                # Actualizar subespecificaciones (si se proporcionan)
                 if 'subespecificaciones' in datos:
                     for clave, valor in datos['subespecificaciones'].items():
                         cursor.execute("UPDATE subespecificaciones_adm SET valor = ? WHERE id_especificacion = ? AND clave = ?", (valor, id_especificacion, clave))
-
               
                 if 'marcas' in datos:
-                    # Primero, eliminar marcas existentes
                     cursor.execute("DELETE FROM marcas_adm WHERE id_especificacion = ?", (id_especificacion,))
                     # Luego, insertar nuevas marcas
                     for marca in datos['marcas']:
                         cursor.execute("INSERT INTO marcas_adm (id_especificacion, marca) VALUES (?, ?)", (id_especificacion, marca))
 
-                connection.commit()
+            connection.commit()
 
         return jsonify({"success": "Especificación actualizada correctamente"}), 200
     except Exception as e:
         return jsonify({"error": f"Error al actualizar la especificación: {e}"}), 500
    
-@articulo_fl2.route('/especificaciones', methods=['POST'])
-def post_especificaciones():
-    data = request.json
+@articulo_fl2.route('/especificaciones/<int:id>', methods=['GET'])
+def get_especificacion_por_id(id):
     try:
         with connect_to_database() as connection:
             with connection.cursor() as cursor:
-                for especificacion in data['especificaciones']:
-                    sql_especificaciones = """INSERT INTO especificaciones_adm (tipo) VALUES (?)"""
-                    cursor.execute(sql_especificaciones, (especificacion['tipo'],))
-                    id_especificacion = cursor.lastrowid
+                # Obtener la especificación por ID
+                cursor.execute("SELECT * FROM especificaciones_adm WHERE id_especificacion = ?", (id,))
+                especificacion_raw = resultados_a_json(cursor)
 
-                    for clave, valor in especificacion['subespecificaciones'].items():
-                        sql_subespecificaciones = """INSERT INTO subespecificaciones_adm (clave, valor, id_especificacion) VALUES (?, ?, ?)"""
-                        cursor.execute(sql_subespecificaciones, (clave, valor, id_especificacion))
+                if not especificacion_raw:
+                    return jsonify({"error": "Especificación no encontrada"}), 404
 
-                    for marca in especificacion.get('marcas', []):
-                        sql_marcas = """INSERT INTO marcas_adm (marca, id_especificacion) VALUES (?, ?)"""
-                        cursor.execute(sql_marcas, (marca, id_especificacion))
+                espec = especificacion_raw[0]
+                id_especificacion = espec['id_especificacion']
+                tipo = espec['tipo']
 
-                    connection.commit()
+                # Obtener subespecificaciones
+                cursor.execute("SELECT clave, valor FROM subespecificaciones_adm WHERE id_especificacion = ?", (id_especificacion,))
+                subespecificaciones_raw = resultados_a_json(cursor)
+                subespecificaciones = {registro['clave']: registro['valor'] for registro in subespecificaciones_raw}
 
-            return jsonify({"success": True, "message": "Especificacion creado exitosamente" ,"id_especificacione": id_especificacion}), 201
+                # Obtener marcas
+                cursor.execute("SELECT marca FROM marcas_adm WHERE id_especificacion = ?", (id_especificacion,))
+                marcas_raw = resultados_a_json(cursor)
+                marcas = [registro['marca'] for registro in marcas_raw]
 
-
-    except Exception as e:
-        return jsonify({"error": f"Error en la base de datos: {e}"}), 500
-    
-# @articulo_fl2.route('/especificaciones', methods=['POST'])
-# def post_especificaciones():
-#     data = request.json
-#     try:
-#         with connect_to_database() as connection:
-#             with connection.cursor() as cursor:
-#                 for especificacion in data['especificaciones']:
-#                     sql_especificaciones = """INSERT INTO especificaciones_adm (tipo) VALUES (?)"""
-#                     cursor.execute(sql_especificaciones, (especificacion['tipo'],))
-#                     id_especificacion = cursor.lastrowid
-
-#                     for clave, valor in especificacion['subespecificaciones'].items():
-#                         sql_subespecificaciones = """INSERT INTO subespecificaciones_adm (clave, valor, id_especificacion) VALUES (?, ?, ?)"""
-#                         cursor.execute(sql_subespecificaciones, (clave, valor, id_especificacion))
-
-#                     connection.commit()
-
-#             return jsonify({"success": True, "message": "Especificacion creado exitosamente" ,"id_especificacione": id_especificacion}), 201
-
-
-#     except Exception as e:
-#         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
-
-    
-
-
-
-
-@articulo_fl2.route('/articulo', methods=['POST'])
-def crear_articulo():
-    try:
-        with connect_to_database() as connection:
-            data = request.json
-            expedition_date = data['expedition_date'] if 'expedition_date' in data else get_default_expedition_date()
-            campos_requeridos = ['ano', 'categoria', 'color', 
-                                 'descripcion', 'enable', 'mainImage', 'marca', 
-                                 'modelo','precio','created',
-                                 'lastUpdate','lastInventoryUpdate','kilometraje']   
-            if not all(campo in data for campo in campos_requeridos):
-                return jsonify({"error": "Faltan campos requeridos"}), 400
-                
-            with connection.cursor() as cursor:
-                sql_articulo = """INSERT INTO articulo (
-                                      ano, categoria, color, descripcion, enable, mainImage, 
-                                      marca, modelo, precio, expedition_date, 
-                                      created, lastUpdate, lastInventoryUpdate, kilometraje
-                                  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?,  ?, ?, ?, ?, ?, ?)"""
-                valores_articulo = (
-                    data['ano'], 
-                    data['categoria'], 
-                    data['color'], 
-                    data['descripcion'],
-                    data['enable'], 
-                    data['mainImage'],
-                    data['marca'], 
-                    data['modelo'],
-                    data['precio'], 
-                    convert_milliseconds_to_datetime(expedition_date),
-                    convert_milliseconds_to_datetime(data['created']),
-                    convert_milliseconds_to_datetime(data['lastUpdate']), 
-                    convert_milliseconds_to_datetime(data['lastInventoryUpdate']), 
-                    data['kilometraje']
-                )
-                cursor.execute(sql_articulo, valores_articulo)
-                id_articulo = cursor.lastrowid
-
-                if 'sucursal_id' in data:
-                    sql_articulo_sucursal = """INSERT INTO articulo_sucursal (id_articulo, id_sucursal) VALUES (?, ?)"""
-                    cursor.execute(sql_articulo_sucursal, (id_articulo, data['sucursal_id']))
-                    
-                if 'especificaciones' in data:
-                    for especificacion in data['especificaciones']:
-                        sql_especificaciones = """INSERT INTO especificaciones (tipo, id_articulo) VALUES (?, ?)"""
-                        cursor.execute(sql_especificaciones, (especificacion['tipo'], id_articulo))
-                        id_especificacion = cursor.lastrowid
-
-                        for clave, valor in especificacion['subespecificaciones'].items():
-                            sql_subespecificaciones = """INSERT INTO subespecificaciones (clave, valor, id_especificacion) VALUES (?, ?, ?)"""
-                            cursor.execute(sql_subespecificaciones, (clave, valor, id_especificacion))
-
-                if 'imagenes' in data:
-                    for imagen in data['imagenes']:
-                        sql_images_articulo = """INSERT INTO images_articulo (url_image, descripcion, id_articulo) VALUES (?, ?, ?)"""
-                        cursor.execute(sql_images_articulo, (imagen['url_image'], imagen['descripcion'], id_articulo))
-
-                    connection.commit()
-                
-
-            return jsonify({"success": True, "message": "Artículo creado exitosamente", "id_articulo": id_articulo}), 201
-
+                return jsonify({
+                    "id_especificacion": id_especificacion,
+                    "tipo": tipo,
+                    "subespecificaciones": subespecificaciones,
+                    "marcas": marcas
+                })
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
 
 
+
+##FALTA DOCUMENTAR
 @articulo_fl2.route('/articulo/<int:id_articulo>', methods=['PUT'])
 def actualizar_articulo(id_articulo):
     try:
@@ -492,20 +529,51 @@ def actualizar_articulo(id_articulo):
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
 
 
-
+# especificaciones,articulo_sucursal,favoritos,images_articulo
 @articulo_fl2.route('/articulo/<int:id_articulo>', methods=['DELETE'])
 def eliminar_articulo(id_articulo):
     try:
         with connect_to_database() as connection:
             with connection.cursor() as cursor:
-                sql_delete = "DELETE FROM articulo WHERE id_articulo = ?"
-                cursor.execute(sql_delete, (id_articulo,))
+
+                sql_select_especificaciones = "SELECT id_especificacion FROM especificaciones WHERE id_articulo = ?"
+                cursor.execute(sql_select_especificaciones, (id_articulo,))
+                especificaciones = resultados_a_json(cursor)
+                # print(especificaciones)
+                # Eliminar subespecificaciones relacionadas con cada especificación
+                for espec in especificaciones:
+                    sql_delete_subespecificaciones = "DELETE FROM subespecificaciones WHERE id_especificacion = ?"
+                    cursor.execute(sql_delete_subespecificaciones, (espec['id_especificacion'],))
+
+                # Eliminar registros de especificaciones
+                sql_delete_especificaciones = "DELETE FROM especificaciones WHERE id_articulo = ?"
+                cursor.execute(sql_delete_especificaciones, (id_articulo,))
+
+                # Eliminar registros de articulo_sucursal
+                sql_delete_articulo_sucursal = "DELETE FROM articulo_sucursal WHERE id_articulo = ?"
+                cursor.execute(sql_delete_articulo_sucursal, (id_articulo,))
+
+                # Eliminar registros de favoritos
+                sql_delete_favoritos = "DELETE FROM favoritos WHERE id_articulo = ?"
+                cursor.execute(sql_delete_favoritos, (id_articulo,))
+
+                # Eliminar registros de images_articulo
+                sql_delete_images_articulo = "DELETE FROM images_articulo WHERE id_articulo = ?"
+                cursor.execute(sql_delete_images_articulo, (id_articulo,))
+
+                # Finalmente, eliminar el artículo
+                sql_delete_articulo = "DELETE FROM articulo WHERE id_articulo = ?"
+                cursor.execute(sql_delete_articulo, (id_articulo,))
+
+                # Confirma todas las operaciones
                 connection.commit()
 
-            return jsonify({"success": True, "message": f"articulo con ID {id_articulo} eliminado exitosamente"}), 200
+            return jsonify({"success": True, "message": f"Artículo con ID {id_articulo} y registros relacionados eliminados exitosamente"}), 200
 
     except Exception as e:
+        # En caso de un error, se hará rollback automáticamente si se está usando un gestor de transacciones
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+
 
 # @articulo_fl2.route('/<str:id_usuario>/<int:id_articulo>', methods=['POST'])
 # def aritulo_favorito(id_articulo,id_usuario):
@@ -541,10 +609,10 @@ def articulo_favorito(id_usuario, id_articulo):
                       ? WHERE id_usuario = ? AND id_articulo = ?"""
                     cursor.execute(sql_update, (new_enable_status, id_usuario, id_articulo))
                 else:
-                    sql_insert = """INSERT INTO favoritos (id_usuario, id_articulo, fecha_agregado, enable) 
+                    sql_insert = """INSERT INTO favoritos (id_usuario, id_articulo, fecha_agregado, [enable]) 
                     VALUES (?, ?, ?, ?)"""
-                    fecha_agregado = datetime.now().strftime('%Y-%m-%d %H:%M:?')
-                    cursor.execute(sql_insert, (id_usuario, id_articulo, fecha_agregado, True))
+                    fecha_agregado = datetime.now()
+                    cursor.execute(sql_insert, (id_usuario, id_articulo, fecha_agregado, 1))
 
                 connection.commit()
             return jsonify({"success": True, "message": "Estado de favorito actualizado exitosamente"}), 200

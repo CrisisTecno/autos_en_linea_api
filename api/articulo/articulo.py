@@ -27,11 +27,12 @@ def get_articulos(connection):
         """
             cursor.execute(sql_articulo)
             raw_results = resultados_a_json(cursor)
-            
+            # print(raw_results)
             articulo_results = {}
             processed_especificaciones = set()
             for row in raw_results:
                 id_articulo = row['id_articulo']
+                # print(id_articulo)
                 id_especificacion = row.get('id_especificacion')
                 if id_articulo not in articulo_results:
                     articulo_results[id_articulo] = {
@@ -42,9 +43,9 @@ def get_articulos(connection):
                         'ano': row['ano'],
                         'precio': row['precio'],
                         'kilometraje': row['kilometraje'],
-                        'created': int(convertir_a_datetime(row['created']).timestamp() * 1000),
-                        'lastUpdate': int(convertir_a_datetime(row['lastUpdate']).timestamp() * 1000),
-                        'lastInventoryUpdate': int(convertir_a_datetime(row['lastInventoryUpdate']).timestamp() * 1000),
+                        'created': row['created'],
+                        'lastUpdate': row['lastUpdate'],
+                        'lastInventoryUpdate': row['lastInventoryUpdate'],
                         'enable': row['enable'],
                         'descripcion': row['descripcion'],
                         'enable': row['enable'],
@@ -89,7 +90,7 @@ def get_articulos(connection):
                 id_sucursales = [sucursal['id_sucursal'] for sucursal in sucursales]
                 articulo_results[id_articulo]['id_sucursales'] = id_sucursales
                     
-                return list(articulo_results.values())
+            return list(articulo_results.values())
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
 

@@ -21,8 +21,7 @@ def get_articulo(connection, id_articulo):
             raw_results = resultados_a_json(cursor)
 
             if not raw_results:
-                return None  # No se encontró el artículo
-            # print(raw_results)
+                return None  
             articulo_resultado = {
                 'id_articulo': raw_results[0]['id_articulo'],
                 'marca': raw_results[0]['marca'],
@@ -31,9 +30,9 @@ def get_articulo(connection, id_articulo):
                 'ano': raw_results[0]['ano'],
                 'precio': raw_results[0]['precio'],
                 'kilometraje': raw_results[0]['kilometraje'],
-                'created': int(convertir_a_datetime(raw_results[0]['created']).timestamp() * 1000),
-                'lastUpdate': int(convertir_a_datetime(raw_results[0]['lastUpdate']).timestamp() * 1000),
-                'lastInventoryUpdate':int(convertir_a_datetime(raw_results[0]['lastInventoryUpdate']).timestamp() * 1000),
+                'created': raw_results[0]['created'],
+                'lastUpdate': raw_results[0]['lastUpdate'],
+                'lastInventoryUpdate': raw_results[0]['lastInventoryUpdate'],
                 'enable': raw_results[0]['enable'],
                 'descripcion': raw_results[0]['descripcion'],
                 'enable': raw_results[0]['enable'],
@@ -68,6 +67,15 @@ def get_articulo(connection, id_articulo):
                         'descripcion': row['img_descripcion'],
                     }
                     articulo_resultado['imagenes'].append(imagen)
+
+                sql_sucursales = """
+                            SELECT id_sucursal FROM articulo_sucursal
+                            WHERE id_articulo = ?
+                        """
+                cursor.execute(sql_sucursales, (id_articulo,))
+                sucursales = resultados_a_json(cursor)
+                id_sucursales = [sucursal['id_sucursal'] for sucursal in sucursales]
+                articulo_resultado['id_sucursales'] = id_sucursales
 
             return articulo_resultado
     except Exception as ex:

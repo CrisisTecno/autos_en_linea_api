@@ -13,6 +13,9 @@ def timedelta_to_string(td):
 
 # para convertir de int a date time
 def unix_to_datetime(unix_timestamp):
+        # Asumimos que un valor mayor a 1e12 (un número con más de 12 dígitos) está en milisegundos
+    if unix_timestamp > 1e12:
+        unix_timestamp /= 1000  # Convertir de milisegundos a segundos
     return datetime.utcfromtimestamp(unix_timestamp)
 
 def timedelta_to_milliseconds(hora_str):

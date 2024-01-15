@@ -48,7 +48,7 @@ def obtener_todos_autos_favoritos_usuario(id_usuario):
                 """
                 cursor.execute(sql, (id_usuario,))
                 autos_all = resultados_a_json(cursor)
-
+                print(autos_all)
                 if not autos_all:
                     return jsonify({"error": "No se encontraron autos favoritos"}), 404
 

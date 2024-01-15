@@ -10,13 +10,15 @@ def insertar_imagen_articulo():
             data = request.json
             campos_requeridos = ['url_image', 'descripcion', 'id_articulo']
 
-            if not all(campo in data for campo in campos_requeridos):
-                return jsonify({"error": "Faltan campos requeridos"}), 400
+            if not all(isinstance(articulo, dict) and all(campo in articulo for campo in campos_requeridos) for articulo in data):
+                return jsonify({"error": "Faltan campos requeridos o formato incorrecto"}), 400
 
             with connection.cursor() as cursor:
                 sql = """INSERT INTO images_articulo (url_image, descripcion, id_articulo) 
                          VALUES (?, ?, ?)"""
-                valores = (data['url_image'], data['descripcion'], data['id_articulo'])
+                for articulo in data:
+                    valores = (articulo['url_image'], articulo['descripcion'], articulo['id_articulo'])
+                    cursor.execute(sql, valores)
 
                 cursor.execute(sql, valores)
                 connection.commit()
