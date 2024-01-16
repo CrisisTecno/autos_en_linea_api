@@ -23,7 +23,7 @@ def crear_articulo():
             campos_requeridos = ['ano', 'categoria', 'color', 
                                  'descripcion', 'enable', 'mainImage', 'marca', 
                                  'modelo','precio','created',
-                                 'lastUpdate','lastInventoryUpdate','kilometraje']   
+                                 'lastUpdate','lastInventoryUpdate','kilometraje','sucursal_id']   
             if not all(campo in data for campo in campos_requeridos):
                 return jsonify({"error": "Faltan campos requeridos"}), 400
                 
@@ -195,7 +195,7 @@ def buscar_articulos():
         #    "JOIN distribuidor_sucursal sd ON s.id_sucursal = sd.id_sucursal " \
         #    "WHERE 1=1"
         #    "ORDER BY articulo.id_articulo" \
-        consulta = "SELECT articulo.*, sucursal.coordenadas,e.id_especificacion, e.tipo, img.url_image, img.descripcion as img_descripcion FROM articulo " \
+        consulta = "SELECT articulo.*,sucursal.direccion, sucursal.coordenadas,e.id_especificacion, e.tipo, img.url_image, img.descripcion as img_descripcion FROM articulo " \
            "LEFT JOIN especificaciones e ON articulo.id_articulo = e.id_articulo " \
            "LEFT JOIN images_articulo img ON articulo.id_articulo = img.id_articulo " \
            "JOIN articulo_sucursal ON articulo.id_articulo = articulo_sucursal.id_articulo " \
@@ -307,9 +307,15 @@ def buscar_articulos():
                             """
                     cursor.execute(sql_sucursales, (id_articulo,))
                     sucursales = resultados_a_json(cursor)
-                    id_sucursales = [sucursal['id_sucursal'] for sucursal in sucursales]
-                    articulo_results[id_articulo]['id_sucursales'] = id_sucursales
-                        
+                    id_sucursales = sucursales[0]['id_sucursal']
+                    sql_sucursal="""
+                                SELECT direccion FROM sucursal WHERE id_sucursal =?
+                        """
+                    cursor.execute(sql_sucursal, (id_sucursales,))
+                    sucursal_dir=resultados_a_json(cursor,unico_resultado=True)
+                    articulo_results[id_articulo]['direccion'] = sucursal_dir['direccion']
+                    articulo_results[id_articulo]['id_sucursal'] = id_sucursales
+                 
                 return list(articulo_results.values())
                 
     except Exception as e:
@@ -421,7 +427,7 @@ def get_especificacion_por_id(id):
     try:
         with connect_to_database() as connection:
             with connection.cursor() as cursor:
-                # Obtener la especificación por ID
+
                 cursor.execute("SELECT * FROM especificaciones_adm WHERE id_especificacion = ?", (id,))
                 especificacion_raw = resultados_a_json(cursor)
 

@@ -79,6 +79,20 @@ def obtener_todos_autos_favoritos_usuario(id_usuario):
                     imagenes = resultados_a_json(cursor)
                     articulo['especificaciones'] = list(especificaciones.values())
                     articulo['imagenes'] = imagenes
+                    sql_sucursales = """
+                            SELECT id_sucursal FROM articulo_sucursal
+                            WHERE id_articulo = ?
+                        """
+                    cursor.execute(sql_sucursales, (id_articulo,))
+                    sucursales = resultados_a_json(cursor)
+                    id_sucursales = sucursales[0]['id_sucursal']
+                    sql_sucursal="""
+                                SELECT direccion FROM sucursal WHERE id_sucursal =?
+                        """
+                    cursor.execute(sql_sucursal, (id_sucursales,))
+                    sucursal_dir=resultados_a_json(cursor,unico_resultado=True)
+                    articulo['direccion'] = sucursal_dir['direccion']
+                    articulo['id_sucursal'] = id_sucursales
                     autos.append(articulo)
 
                 return jsonify({"success": True, "autos_favoritos": autos}), 200

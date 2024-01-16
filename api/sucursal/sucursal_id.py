@@ -55,13 +55,13 @@ def process_sucursal_por_id(connection, id_sucursal):
             sql_sucursal = "SELECT * FROM sucursal WHERE id_sucursal = ?;"
             cursor.execute(sql_sucursal, (id_sucursal,))
             sucursal_record = resultados_a_json(cursor, unico_resultado=True)
-            print(sucursal_record)
+            #print(sucursal_record)
             if sucursal_record:
 
                 sql_sucursales_imagenes = "SELECT * FROM images_sucursal WHERE id_sucursal = ?;"
                 cursor.execute(sql_sucursales_imagenes, (id_sucursal,))
                 sucursal_images = resultados_a_json(cursor)
-                print(sucursal_images)
+                #print(sucursal_images)
                 sucursal_record['sucursal_images'] = sucursal_images
 
                 sql_articulos = """SELECT articulo.ano,articulo.categoria, articulo.color,articulo.created,articulo.descripcion,
@@ -73,7 +73,7 @@ def process_sucursal_por_id(connection, id_sucursal):
                                    WHERE articulo_sucursal.id_sucursal = ?;"""
                 cursor.execute(sql_articulos, (id_sucursal,))
                 articulos_list = resultados_a_json(cursor)
-                print(articulos_list)
+                #print(articulos_list)
                 sucursal_record['sucursal_articulos'] = articulos_list
                 sql_horarios_sucursal = "SELECT * FROM horarios_sucursal WHERE id_sucursal = ?"
                 cursor.execute(sql_horarios_sucursal, (id_sucursal,))

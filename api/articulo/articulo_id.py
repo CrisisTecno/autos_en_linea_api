@@ -74,8 +74,15 @@ def get_articulo(connection, id_articulo):
                         """
                 cursor.execute(sql_sucursales, (id_articulo,))
                 sucursales = resultados_a_json(cursor)
-                id_sucursales = [sucursal['id_sucursal'] for sucursal in sucursales]
-                articulo_resultado['id_sucursales'] = id_sucursales
+                id_sucursales = sucursales[0]['id_sucursal']
+                sql_sucursal="""
+                            SELECT direccion FROM sucursal WHERE id_sucursal =?
+                    """
+                cursor.execute(sql_sucursal, (id_sucursales,))
+                sucursal_dir=resultados_a_json(cursor,unico_resultado=True)
+                articulo_resultado['direccion'] = sucursal_dir['direccion']
+                articulo_resultado['id_sucursal'] = id_sucursales
+                
 
             return articulo_resultado
     except Exception as ex:
