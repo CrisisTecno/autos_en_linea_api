@@ -15,15 +15,18 @@ usuario_fl.register_blueprint(usuario_fl2,)
 def process_usuario(connection):
     try:
         with connection.cursor() as cursor:
-            sql_sucursal = """SELECT * FROM usuario;"""
-            cursor.execute(sql_sucursal)
+            sql_usuario = """SELECT 
+                u.id_usuario, u.id_usuario_firebase, u.rol,
+                u.nombres, u.apellidos, u.correo_electronico, u.num_telefono,
+                u.url_logo, u.coordenadas, u.created, u.lastUpdate,
+                s.id_sucursal, d.id_distribuidor
+            FROM usuario u
+            LEFT JOIN usuario_sucursal s ON u.id_usuario = s.id_usuario
+            LEFT JOIN usuario_distribuidor d ON u.id_usuario = d.id_usuario;"""
+            cursor.execute(sql_usuario)
             usuario_results = resultados_a_json(cursor)
             
-            # for usuario_record in usuario_results:
-            #      for key in ['created', 'lastUpdate']: 
-            #         if usuario_record[key]:
-            #             usuarios_info_2=convertir_a_datetime(usuario_record[key])
-            #             usuario_record[key] = int(usuarios_info_2.timestamp() * 1000)
+
             
             return usuario_results
     except Exception as e:

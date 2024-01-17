@@ -10,17 +10,19 @@ usuario_fl1=Blueprint('usuario_id', __name__)
 def get_usuario(connection, usuario_id):
     try:
         with connection.cursor() as cursor:
-            sql_usuario = """SELECT * FROM usuario WHERE id_usuario = ?"""
+            sql_usuario ="""SELECT 
+                u.id_usuario, u.id_usuario_firebase, u.rol,
+                u.nombres, u.apellidos, u.correo_electronico, u.num_telefono,
+                u.url_logo, u.coordenadas, u.created, u.lastUpdate,
+                s.id_sucursal, d.id_distribuidor
+            FROM usuario u
+            LEFT JOIN usuario_sucursal s ON u.id_usuario = s.id_usuario
+            LEFT JOIN usuario_distribuidor d ON u.id_usuario = d.id_usuario 
+            WHERE u.id_usuario = ?;"""
             
             cursor.execute(sql_usuario, (usuario_id,))
             usuario_info = resultados_a_json(cursor, unico_resultado=True)
 
-            # if usuario_info:
-            #     for key in ['created', 'lastUpdate']:
-      
-            #         if usuario_info[key]:
-            #             usuarios_info_2=convertir_a_datetime(usuario_info[key])
-            #             usuario_info[key] = int(usuarios_info_2.timestamp() * 1000)
 
             return usuario_info
 
@@ -30,16 +32,19 @@ def get_usuario(connection, usuario_id):
 def get_usuario_by_id_fire(connection, usuario_id):
     try:
         with connection.cursor() as cursor:
-            sql_usuario = """SELECT * FROM usuario WHERE id_usuario_firebase = ?"""
+            sql_usuario ="""SELECT 
+                u.id_usuario, u.id_usuario_firebase, u.rol,
+                u.nombres, u.apellidos, u.correo_electronico, u.num_telefono,
+                u.url_logo, u.coordenadas, u.created, u.lastUpdate,
+                s.id_sucursal, d.id_distribuidor
+            FROM usuario u
+            LEFT JOIN usuario_sucursal s ON u.id_usuario = s.id_usuario
+            LEFT JOIN usuario_distribuidor d ON u.id_usuario = d.id_usuario 
+            WHERE u.id_usuario_firebase = ?;"""
             cursor.execute(sql_usuario, (usuario_id,))
             usuario_info = resultados_a_json(cursor, unico_resultado=True)
             
-            # if usuario_info:
-            #     for key in ['created', 'lastUpdate']: 
-            #         if usuario_info[key]:
-            #             usuarios_info_2=convertir_a_datetime(usuario_info[key])
-
-            #             usuario_info[key] = int(usuarios_info_2.timestamp() * 1000)
+ 
       
             return usuario_info
     except Exception as e:

@@ -16,11 +16,11 @@ def crear_distribuidor():
                 'gerente', 'logo_image', 'coordenadas' ,'direccion',
                 'nombre', 'url_paginaWeb', 'telefono', 'email', 'horarioAtencion','created','lastUpdate'
             ]
-            
+
             if not all(campo in data for campo in campos_requeridos) or not all(dia in data['horarioAtencion'] for dia in ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo']):
-                
+
                 return jsonify({"error": "Faltan campos requeridos"}), 400
-                
+
             with connection.cursor() as cursor:
                 sql_distribuidor = """
                         INSERT INTO distribuidor (
@@ -44,7 +44,7 @@ def crear_distribuidor():
                 )
                 cursor.execute(sql_distribuidor, valores_distribuidor)
                 id_distribuidor = cursor.fetchone()[0]
-              
+
                 # sql_id_distribuidor= """
                 #     SELECT id_distribuidor FROM distribuidor
                 #     WHERE nombre = ? AND email = ? AND telefono = ? AND gerente = ?
@@ -118,7 +118,7 @@ def actualizar_distribuidor(id_distribuidor):
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
 
-    
+
 @distribuidor_fl2.route('/distribuidor/<int:id_distribuidor>', methods=['DELETE'])
 def eliminar_distribuidor(id_distribuidor):
     try:
@@ -134,6 +134,9 @@ def eliminar_distribuidor(id_distribuidor):
                 sql_delete_horarios_distribuidor = "DELETE FROM horarios_distribuidor WHERE id_distribuidor = ?"
                 cursor.execute(sql_delete_horarios_distribuidor, (id_distribuidor,))
 
+                sql_delete_usuario_distribuidor = "DELETE FROM usuario_distribuidor WHERE id_distribuidor = ?"
+                cursor.execute(sql_delete_usuario_distribuidor, (id_distribuidor,))
+
                 sql_delete_distribuidor = "DELETE FROM distribuidor WHERE id_distribuidor = ?"
                 cursor.execute(sql_delete_distribuidor, (id_distribuidor,))
 
@@ -146,21 +149,30 @@ def eliminar_distribuidor(id_distribuidor):
         # En caso de un error, se hará rollback automáticamente si se está usando un gestor de transacciones
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
 
-    
+
 @distribuidor_fl2.route('/<int:id_distribuidor>/usuarios', methods=['GET'])
 def obtener_usuarios_por_distribuidor(id_distribuidor):
     try:
         with connect_to_database() as connection:
             with connection.cursor() as cursor:
-              
-                sql = """
-                    SELECT *  FROM usuario
-                    WHERE id_distribuidor = ?
-                """
+
+                sql = """SELECT
+                u.id_usuario, u.id_usuario_firebase, u.rol,
+                u.nombres, u.apellidos, u.correo_electronico, u.num_telefono,
+                u.url_logo, u.coordenadas, u.created, u.lastUpdate,
+                s.id_sucursal, d.id_distribuidor
+            FROM usuario u
+            LEFT JOIN usuario_sucursal s ON u.id_usuario = s.id_usuario
+            LEFT JOIN usuario_distribuidor d ON u.id_usuario = d.id_usuario
+            WHERE d.id_distribuidor = ?;"""
+                # sql = """
+                #     SELECT *  FROM usuario
+                #     WHERE id_distribuidor = ?
+                # """
                 cursor.execute(sql, (id_distribuidor,))
                 usuarios = resultados_a_json(cursor)
-         
-                    
+
+
                 if not usuarios:
                     return jsonify({"error": f"No se encontraron usuarios para el distribuidor con ID {id_distribuidor}"}), 404
 
@@ -197,8 +209,8 @@ def obtener_articulos_por_distribuidor(id_distribuidor):
 
 def procesar_articulo(cursor, id_articulo):
     sql_articulo = """
-        SELECT a.*, 
-            e.id_especificacion, e.tipo, 
+        SELECT a.*,
+            e.id_especificacion, e.tipo,
             img.url_image, img.descripcion as img_descripcion
         FROM articulo a
         LEFT JOIN especificaciones e ON a.id_articulo = e.id_articulo
@@ -208,7 +220,7 @@ def procesar_articulo(cursor, id_articulo):
     cursor.execute(sql_articulo, (id_articulo,))
     resultados_crudos = resultados_a_json(cursor)
     if not resultados_crudos:
-        return None  
+        return None
     articulo_resultado = {
         'id_articulo': resultados_crudos[0]['id_articulo'],
         'marca': resultados_crudos[0]['marca'],
@@ -222,8 +234,8 @@ def procesar_articulo(cursor, id_articulo):
         'lastInventoryUpdate': resultados_crudos[0]['lastInventoryUpdate'],
         'enable': resultados_crudos[0]['enable'],
         'descripcion': resultados_crudos[0]['descripcion'],
-        'color': resultados_crudos[0]['color'],  
-        'mainImage': resultados_crudos[0]['mainImage'],      
+        'color': resultados_crudos[0]['color'],
+        'mainImage': resultados_crudos[0]['mainImage'],
         'especificaciones': [],
         'imagenes': []
     }
@@ -255,7 +267,7 @@ def procesar_articulo(cursor, id_articulo):
             articulo_resultado['imagenes'].append(imagen)
 
     return articulo_resultado
-    
+
 @distribuidor_fl2.route('/<int:id_distribuidor>/sucursales', methods=['GET'])
 def obtener_sucursales_por_distribuidor(id_distribuidor):
     try:
@@ -299,14 +311,15 @@ def obtener_sucursales_por_distribuidor(id_distribuidor):
                         dia = horario['day']
                         horarios_sucursal[dia] = {
                             'open': timedelta_to_milliseconds(horario['open']),
-                            'close':timedelta_to_milliseconds(horario['close']) 
+                            'close':timedelta_to_milliseconds(horario['close'])
                         }
 
                     sucursal_record['horarios_sucursal'] = horarios_sucursal
+                    sucursal_record['id_distribuidor']=id_distribuidor
                     sucursales_processed.append(sucursal_record)
 
             return jsonify(sucursales_processed)
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
-    
+
 

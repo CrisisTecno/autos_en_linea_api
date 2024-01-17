@@ -181,6 +181,9 @@ def eliminar_sucursal(id_sucursal):
                 sql_delete_horarios_sucursal = "DELETE FROM horarios_sucursal WHERE id_sucursal = ?"
                 cursor.execute(sql_delete_horarios_sucursal, (id_sucursal,))
 
+                sql_delete_usuario_sucursal = "DELETE FROM usuario_sucursal WHERE id_sucursal = ?"
+                cursor.execute(sql_delete_usuario_sucursal, (id_sucursal,))
+
                 sql_delete_sucursal = "DELETE FROM sucursal WHERE id_sucursal = ?"
                 cursor.execute(sql_delete_sucursal, (id_sucursal,))
 
@@ -271,11 +274,16 @@ def obtener_usuarios_por_distribuidor(id_sucursal):
     try:
         with connect_to_database() as connection:
             with connection.cursor() as cursor:
-              
-                sql = """
-                    SELECT *  FROM usuario
-                    WHERE id_sucursal = ?
-                """
+                
+                sql = """SELECT 
+                u.id_usuario, u.id_usuario_firebase, u.rol,
+                u.nombres, u.apellidos, u.correo_electronico, u.num_telefono,
+                u.url_logo, u.coordenadas, u.created, u.lastUpdate,
+                s.id_sucursal, d.id_distribuidor
+            FROM usuario u
+            LEFT JOIN usuario_sucursal s ON u.id_usuario = s.id_usuario
+            LEFT JOIN usuario_distribuidor d ON u.id_usuario = d.id_usuario
+            WHERE s.id_sucursal = ?;"""
                 cursor.execute(sql, (id_sucursal,))
                 usuarios = resultados_a_json(cursor)
 

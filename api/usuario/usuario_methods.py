@@ -21,8 +21,8 @@ def crear_usuario():
                 sql = """INSERT INTO usuario (
                              rol, nombres, apellidos, 
                              correo_electronico, num_telefono, url_logo, 
-                             coordenadas, id_sucursal, id_distribuidor, created, lastUpdate, id_usuario_firebase
-                         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)"""
+                             coordenadas,  created, lastUpdate, id_usuario_firebase
+                         ) OUTPUT INSERTED.id_usuario VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)"""
                 valores = (
                     data['rol'],
                     data['nombres'],
@@ -31,14 +31,27 @@ def crear_usuario():
                     data['num_telefono'],
                     data.get('url_logo', ''),
                     data.get('coordenadas', ''),
-                    data.get('id_sucursal'),
-                    data.get('id_distribuidor'),
                     data.get('id_usuario_firebase','')
                 )
                 cursor.execute(sql, valores)
+                
+                id_usuario_insertado  = cursor.fetchone()[0]
+
+                sql_usuario_sucursal = """INSERT INTO usuario_sucursal (
+                                        id_usuario, id_sucursal
+                                    ) VALUES (?, ?)"""
+                valores_usuario_sucursal = (id_usuario_insertado, data.get('id_sucursal'))
+                cursor.execute(sql_usuario_sucursal, valores_usuario_sucursal)
+
+                sql_usuario_distribuidor = """INSERT INTO usuario_distribuidor (
+                                            id_usuario, id_distribuidor
+                                        ) VALUES (?, ?)"""
+                valores_usuario_distribuidor = (id_usuario_insertado, data.get('id_distribuidor'))
+                cursor.execute(sql_usuario_distribuidor, valores_usuario_distribuidor)
+                
                 connection.commit()
 
-            return jsonify({"success": True, "message": "Usuario creado exitosamente"}), 201
+            return jsonify({"success": True, "message": "Usuario creado exitosamente","id_usuario":id_usuario_insertado}), 201
 
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
@@ -49,31 +62,86 @@ def actualizar_usuario(id_usuario):
         with connect_to_database() as connection:
             data = request.json
             campos_permitidos = ['rol', 'nombres', 'apellidos', 'correo_electronico',
-                                 'num_telefono', 'url_logo', 'coordenadas', 
+                                 'num_telefono', 'url_logo', 'coordenadas',
                                  'id_sucursal', 'id_distribuidor', 'id_usuario_firebase']
             cambios = []
             valores = []
+
             for campo in campos_permitidos:
                 if campo in data:
-                    cambios.append(f"{campo} = ?")
-                    valores.append(data[campo])
+                    if campo in ['id_distribuidor']:
+                        sql_update_relacion = f"UPDATE usuario_distribuidor SET {campo} = ? WHERE id_usuario = ?"
+                        valores_relacion = (data[campo], id_usuario)
+                        with connection.cursor() as cursor_relacion:
+                            cursor_relacion.execute(sql_update_relacion, valores_relacion)
+                            connection.commit()
+                    if campo in ['id_sucursal']:
+                        sql_update_relacion = f"UPDATE usuario_sucursal SET {campo} = ? WHERE id_usuario = ?"
+                        valores_relacion = (data[campo], id_usuario)
+                        with connection.cursor() as cursor_relacion:
+                            cursor_relacion.execute(sql_update_relacion, valores_relacion)
+                            connection.commit()
+                    else:
+                        cambios.append(f"{campo} = ?")
+                        valores.append(data[campo])
 
             if not cambios:
                 return jsonify({"error": "No se proporcionaron datos para actualizar"}), 400
 
             cambios.append("lastUpdate = CURRENT_TIMESTAMP")
-            
-            sql_update = "UPDATE usuario SET " + ", ".join(cambios) + " WHERE id_usuario = ?"
+
+            sql_update_usuario = "UPDATE usuario SET " + ", ".join(cambios) + " WHERE id_usuario = ?"
             valores.append(id_usuario)
-            
+
             with connection.cursor() as cursor:
-                cursor.execute(sql_update, valores)
+                cursor.execute(sql_update_usuario, valores)
                 connection.commit()
 
             return jsonify({"success": True, "message": f"Usuario con ID {id_usuario} actualizado exitosamente"}), 200
 
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+  
+# @usuario_fl2.route('/usuario/<int:id_usuario>', methods=['PUT'])
+# def actualizar_usuario(id_usuario):
+#     try:
+#         with connect_to_database() as connection:
+#             data = request.json
+#             campos_permitidos = ['rol', 'nombres', 'apellidos', 'correo_electronico',
+#                                  'num_telefono', 'url_logo', 'coordenadas', 
+#                                  'id_sucursal', 'id_distribuidor', 'id_usuario_firebase']
+#             cambios = []
+#             valores = []
+#             for campo in campos_permitidos:
+#                 if campo in data:
+#                     cambios.append(f"{campo} = ?")
+#                     valores.append(data[campo])
+
+#             if not cambios:
+#                 return jsonify({"error": "No se proporcionaron datos para actualizar"}), 400
+
+#             cambios.append("lastUpdate = CURRENT_TIMESTAMP")
+            
+#             sql_update = "UPDATE usuario SET " + ", ".join(cambios) + " WHERE id_usuario = ?"
+#             valores.append(id_usuario)
+            
+#             with connection.cursor() as cursor:
+#                 cursor.execute(sql_update, valores)
+#                 connection.commit()
+#                 if 'id_sucursal' in data:
+#                     sql_update_sucursal = "UPDATE usuario_sucursal SET id_sucursal = ? WHERE id_usuario = ?"
+#                     valores_sucursal = (data['id_sucursal'], id_usuario)
+#                     cursor.execute(sql_update_sucursal, valores_sucursal)
+
+#                 if 'id_distribuidor' in data:
+#                     sql_update_distribuidor = "UPDATE usuario_distribuidor SET id_distribuidor = ? WHERE id_usuario = ?"
+#                     valores_distribuidor = (data['id_distribuidor'], id_usuario)
+#                     cursor.execute(sql_update_distribuidor, valores_distribuidor)
+
+#             return jsonify({"success": True, "message": f"Usuario con ID {id_usuario} actualizado exitosamente"}), 200
+
+#     except Exception as e:
+#         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
     
 
 @usuario_fl2.route('/usuario/<int:id_usuario>', methods=['DELETE'])
@@ -81,17 +149,18 @@ def eliminar_usuario(id_usuario):
     try:
         with connect_to_database() as connection:
             with connection.cursor() as cursor:
-                # Eliminar registros de actividades del usuario
                 sql_delete_actividades_usuario = "DELETE FROM registro_actividades_usuario WHERE id_usuario = ?"
                 cursor.execute(sql_delete_actividades_usuario, (id_usuario,))
 
-                # Eliminar registros de favoritos asociados al usuario
                 sql_delete_favoritos = "DELETE FROM favoritos WHERE id_usuario = ?"
                 cursor.execute(sql_delete_favoritos, (id_usuario,))
 
-                # Si hay otros registros relacionados en otras tablas, inclúyelos aquí
+                sql_delete_usuario_sucursal = "DELETE FROM usuario_sucursal WHERE id_usuario = ?"
+                cursor.execute(sql_delete_usuario_sucursal, (id_usuario,))
 
-                # Finalmente, eliminar el usuario
+                sql_delete_usuario_distribuidor = "DELETE FROM usuario_distribuidor WHERE id_usuario = ?"
+                cursor.execute(sql_delete_usuario_distribuidor, (id_usuario,))
+
                 sql_delete_usuario = "DELETE FROM usuario WHERE id_usuario = ?"
                 cursor.execute(sql_delete_usuario, (id_usuario,))
                 
@@ -101,6 +170,7 @@ def eliminar_usuario(id_usuario):
 
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+
 
 
 
@@ -120,7 +190,15 @@ def usuario_existe_por_telefono():
                 existe = result['conteo'] > 0
                 id_usuario = None
                 if existe:
-                    sql_firebase = "SELECT * FROM usuario WHERE num_telefono = ?"
+                    sql_firebase ="""SELECT 
+                u.id_usuario, u.id_usuario_firebase, u.rol,
+                u.nombres, u.apellidos, u.correo_electronico, u.num_telefono,
+                u.url_logo, u.coordenadas, u.created, u.lastUpdate,
+                s.id_sucursal, d.id_distribuidor
+            FROM usuario u
+            LEFT JOIN usuario_sucursal s ON u.id_usuario = s.id_usuario
+            LEFT JOIN usuario_distribuidor d ON u.id_usuario = d.id_usuario 
+            WHERE u.num_telefono = ?;"""
                     cursor.execute(sql_firebase, (num_telefono,))
                     result_firebase = resultados_a_json(cursor, unico_resultado=True)
                    

@@ -21,13 +21,10 @@ def unix_to_datetime(unix_timestamp):
 def timedelta_to_milliseconds(time_string):
     # hora =datetime.strptime(hora_str, '%H:%M:%S').time()
     # segundos_desde_medianoche = (hora.hour * 3600) + (hora.minute * 60) + hora.second
-    
     # return segundos_desde_medianoche
     hours, minutes, seconds = map(int, time_string.split(':'))
-    
     # Calcular el total de segundos
     total_seconds = hours * 3600 + minutes * 60 + seconds
-    
     # Convertir segundos a milisegundos
     milliseconds = total_seconds * 1000
     
