@@ -298,8 +298,8 @@ def obtener_sucursales_por_distribuidor(id_distribuidor):
                     for horario in horarios_raw:
                         dia = horario['day']
                         horarios_sucursal[dia] = {
-                            'open': horario['open'],
-                            'close': horario['close']
+                            'open': timedelta_to_milliseconds(horario['open']),
+                            'close':timedelta_to_milliseconds(horario['close']) 
                         }
 
                     sucursal_record['horarios_sucursal'] = horarios_sucursal
