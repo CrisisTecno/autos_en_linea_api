@@ -123,7 +123,7 @@ def actualizar_sucursal(id_sucursal):
                 valores = []
 
                 for campo in campos_permitidos:
-                    if campo in data:
+                    if campo in data and campo!='horarioAtencion':
                         valor = data[campo]
                         if campo in ['created', 'lastUpdate']:
                             valor = unix_to_datetime(valor)
@@ -154,7 +154,18 @@ def actualizar_sucursal(id_sucursal):
                 #         sql_insertar_imagen = """INSERT INTO images_sucursal (url_image, descripcion, id_sucursal) 
                 #                                  VALUES (?, ?, ?)"""
                 #         cursor.execute(sql_insertar_imagen, (imagen['url_image'], imagen['descripcion'], id_sucursal))   
-
+                if 'horarioAtencion' in data:
+                    
+                    for dia, horarios in data['horarioAtencion'].items():
+                        print(dia)
+                        print(horarios)
+                        print(horarios['open'])
+                        open_time = convert_milliseconds_to_time_string(horarios['open'])
+                        close_time = convert_milliseconds_to_time_string(horarios['close'])
+                        sql_update_horarios = """UPDATE horarios_sucursal
+                                                SET [open] = ?, [close] = ?
+                                                WHERE id_sucursal = ? AND day = ?"""
+                        cursor.execute(sql_update_horarios, (open_time, close_time, id_sucursal, dia))
                 connection.commit()
 
             return jsonify({"success": True, "message": f"Sucursal con ID {id_sucursal} actualizada exitosamente"}), 200

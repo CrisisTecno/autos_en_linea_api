@@ -45,14 +45,6 @@ def crear_distribuidor():
                 cursor.execute(sql_distribuidor, valores_distribuidor)
                 id_distribuidor = cursor.fetchone()[0]
 
-                # sql_id_distribuidor= """
-                #     SELECT id_distribuidor FROM distribuidor
-                #     WHERE nombre = ? AND email = ? AND telefono = ? AND gerente = ?
-                # """
-                # cursor.execute(sql, (data['nombre'], data['email'], data['telefono'], data['gerente']))
-                # print(id_distribuidor)
-
-                # Insertar relaciones distribuidor-sucursal
                 if 'sucursales' in data and isinstance(data['sucursales'], list):
                     for id_sucursal in data['sucursales']:
                         sql_distribuidor_sucursal = """INSERT INTO distribuidor_sucursal (id_distribuidor, id_sucursal)
@@ -65,7 +57,6 @@ def crear_distribuidor():
                                                     VALUES (?, ?)"""
                         cursor.execute(sql_marca_distribuidor, (marca, id_distribuidor))
 
-                # Insertar horarios de atención del distribuidor
                 for dia, horarios in data['horarioAtencion'].items():
                     open_time = convert_milliseconds_to_time_string(horarios['open'])
                     close_time = convert_milliseconds_to_time_string(horarios['close'])
@@ -79,6 +70,112 @@ def crear_distribuidor():
 
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+from flask import request, jsonify
+
+# @distribuidor_fl2.route('/distribuidor/<int:id_distribuidor>', methods=['PUT'])
+# def actualizar_distribuidor(id_distribuidor):
+#     try:
+#         with connect_to_database() as connection:
+#             data = request.json
+#             campos_permitidos = [
+#                 'gerente', 'logo_image', 'coordenadas' ,'direccion',
+#                 'nombre', 'url_paginaWeb', 'telefono', 'email', 'lastUpdate','horarioAtencion'
+#             ]
+
+#             if not any(campo in data for campo in campos_permitidos):
+#                 return jsonify({"error": "No se proporcionaron datos para actualizar"}), 400
+            
+#             # for dia, horarios in data['horarioAtencion'].items():
+#             #             print(dia)
+#             #             print(horarios)
+#             #             print(horarios['open'])
+#             #             print(type(horarios['open']))
+#             with connection.cursor() as cursor:
+#                 # Actualizar la información principal del distribuidor
+#                 sql_update_distribuidor = """UPDATE distribuidor
+#                                              SET gerente = ?, logo_image = ?, coordenadas = ?,
+#                                                  direccion = ?, nombre = ?, url_paginaWeb = ?,
+#                                                  telefono = ?, email = ?, lastUpdate = ?
+#                                              WHERE id_distribuidor = ?"""
+#                 valores_distribuidor = (
+#                     data.get('gerente'),
+#                     data.get('logo_image'),
+#                     data.get('coordenadas'),
+#                     data.get('direccion'),
+#                     data.get('nombre'),
+#                     data.get('url_paginaWeb'),
+#                     data.get('telefono'),
+#                     data.get('email'),
+#                     unix_to_datetime(data.get('lastUpdate')),
+#                     id_distribuidor
+#                 )
+#                 cursor.execute(sql_update_distribuidor, valores_distribuidor)
+
+#                 # Actualizar la relación con sucursales
+#                 if 'sucursales' in data and isinstance(data['sucursales'], list):
+#                     # Eliminar las relaciones existentes
+#                     sql_delete_relaciones_sucursal = "DELETE FROM distribuidor_sucursal WHERE id_distribuidor = ?"
+#                     cursor.execute(sql_delete_relaciones_sucursal, (id_distribuidor,))
+                    
+#                     # Agregar las nuevas relaciones
+#                     for id_sucursal in data['sucursales']:
+#                         sql_distribuidor_sucursal = """INSERT INTO distribuidor_sucursal (id_distribuidor, id_sucursal)
+#                                                        VALUES (?, ?)"""
+#                         cursor.execute(sql_distribuidor_sucursal, (id_distribuidor, id_sucursal))
+
+#                 # Actualizar la relación con marcas
+#                 if 'marcas' in data and isinstance(data['marcas'], list):
+#                     # Eliminar las relaciones existentes
+#                     sql_delete_relaciones_marcas = "DELETE FROM marcas_distribuidor WHERE id_distribuidor = ?"
+#                     cursor.execute(sql_delete_relaciones_marcas, (id_distribuidor,))
+                    
+#                     # Agregar las nuevas relaciones
+#                     for marca in data['marcas']:
+#                         sql_marca_distribuidor = """INSERT INTO marcas_distribuidor (marca, id_distribuidor)
+#                                                     VALUES (?, ?)"""
+#                         cursor.execute(sql_marca_distribuidor, (marca, id_distribuidor))
+
+#                 # Actualizar los horarios de atención
+#                 # if 'horarioAtencion' in data:
+#                 #     for dia, horarios in data['horarioAtencion'].items():
+#                 #         open_time = convert_milliseconds_to_time_string(horarios['open'])
+#                 #         print(open_time)
+#                 #         close_time = convert_milliseconds_to_time_string(horarios['close'])
+
+#                 #         sql_update_horarios = """UPDATE horarios_distribuidor
+#                 #                                  SET [open] = ?, [close] = ?
+#                 #                                  WHERE id_distribuidor = ? AND day = ?"""
+#                 #         cursor.execute(sql_update_horarios, (open_time, close_time, id_distribuidor, dia))
+#                 if 'horarioAtencion' in data:
+#                     print("entra aca we")
+#                     for dia, horarios in data['horarioAtencion'].items():
+#                         print(dia)
+#                         print(horarios)
+#                         print(horarios['open'])
+#                         open_time = convert_milliseconds_to_time_string(horarios['open'])
+#                         close_time = convert_milliseconds_to_time_string(horarios['close'])
+#                         sql_update_horarios = """UPDATE horarios_distribuidor
+#                                                 SET [open] = ?, [close] = ?
+#                                                 WHERE id_distribuidor = ? AND day = ?"""
+#                         cursor.execute(sql_update_horarios, (open_time, close_time, id_distribuidor, dia))
+
+#                 # if 'horarioAtencion' in data:
+#                 #     for dia, horarios in data['horarioAtencion'].items():
+#                 #         open_time = convert_milliseconds_to_time_string(horarios.get('open', 0)) if 'open' in horarios else None
+#                 #         close_time = convert_milliseconds_to_time_string(horarios.get('close', 0)) if 'close' in horarios else None
+#                 #         if open_time is not None and close_time is not None:
+#                 #             sql_update_horarios = """UPDATE horarios_distribuidor
+#                 #                                     SET [open] = ?, [close] = ?
+#                 #                                     WHERE id_distribuidor = ? AND day = ?"""
+#                 #             cursor.execute(sql_update_horarios, (open_time, close_time, id_distribuidor, dia))
+
+
+#                 connection.commit()
+
+#             return jsonify({"success": True, "message": f"Distribuidor con ID {id_distribuidor} actualizado exitosamente"}), 200
+
+#     except Exception as e:
+#         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
 
 @distribuidor_fl2.route('/distribuidor/<int:id_distribuidor>', methods=['PUT'])
 def actualizar_distribuidor(id_distribuidor):
@@ -92,13 +189,13 @@ def actualizar_distribuidor(id_distribuidor):
 
             if not any(campo in data for campo in campos_permitidos):
                 return jsonify({"error": "Se requiere al menos un campo para actualizar"}), 400
-
+            print(data)
             with connection.cursor() as cursor:
                 sql_update = "UPDATE distribuidor SET "
                 valores = []
 
                 for campo in campos_permitidos:
-                    if campo in data:
+                    if campo in data and campo!='horarioAtencion':
                         valor = data[campo]
                         if campo in ['created', 'lastUpdate']:
                             valor = unix_to_datetime(valor)
@@ -109,8 +206,20 @@ def actualizar_distribuidor(id_distribuidor):
                 sql_update = sql_update.rstrip(', ')
                 sql_update += " WHERE id_distribuidor = ?"
                 valores.append(id_distribuidor)
-
                 cursor.execute(sql_update, valores)
+                if 'horarioAtencion' in data:
+                    for dia, horarios in data['horarioAtencion'].items():
+                        print(dia)
+                        print(horarios)
+                        print(horarios['open'])
+                        open_time = convert_milliseconds_to_time_string(horarios['open'])
+                        close_time = convert_milliseconds_to_time_string(horarios['close'])
+                        sql_update_horarios = """UPDATE horarios_distribuidor
+                                                SET [open] = ?, [close] = ?
+                                                WHERE id_distribuidor = ? AND day = ?"""
+                        cursor.execute(sql_update_horarios, (open_time, close_time, id_distribuidor, dia))
+
+                
                 connection.commit()
 
             return jsonify({"success": True, "message": f"Distribuidor con ID {id_distribuidor} actualizado exitosamente"}), 200

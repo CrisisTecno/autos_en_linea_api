@@ -34,6 +34,7 @@ def convert_milliseconds_to_datetime(milliseconds):
     return datetime.fromtimestamp(seconds).strftime('%Y-%m-%d %H:%M:%S')
 
 def convert_milliseconds_to_time_string(milliseconds):
+    print(milliseconds)
     seconds = milliseconds // 1000
     hours = seconds // 3600
     minutes = (seconds % 3600) // 60

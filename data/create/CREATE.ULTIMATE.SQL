@@ -22,6 +22,20 @@ CREATE TABLE distribuidor_sucursal (
     FOREIGN KEY (id_sucursal) REFERENCES sucursal(id_sucursal)
 );
 
+CREATE TABLE sucursal (
+    id_sucursal INT IDENTITY(1,1)  PRIMARY KEY,
+    direccion VARCHAR(255),
+    telefono VARCHAR(255),
+    nombre VARCHAR(255),
+    gerente VARCHAR(100),
+    contacto VARCHAR(255),
+    correo_electronico VARCHAR(255),
+    created DATETIME2,
+    lastUpdate DATETIME2,
+    url_logo VARCHAR(255),
+    coordenadas VARCHAR(255)
+);
+
 CREATE TABLE usuario (
     id_usuario INT IDENTITY(1,1) PRIMARY KEY ,
     id_usuario_firebase VARCHAR(255),
@@ -33,21 +47,19 @@ CREATE TABLE usuario (
     url_logo VARCHAR(255),
     coordenadas VARCHAR(255),
     created DATETIME2 ,
-    lastUpdate DATETIME2 ,
-    id_sucursal INT,
-    id_distribuidor INT,
-    FOREIGN KEY (id_sucursal) REFERENCES sucursal(id_sucursal),
-    FOREIGN KEY (id_distribuidor) REFERENCES distribuidor(id_distribuidor)
+    lastUpdate DATETIME2  
+);
+CREATE TABLE favoritos (
+    id_favorito INT PRIMARY KEY IDENTITY(1,1),
+    id_usuario INT,
+    id_articulo INT,
+    [enable] BIT,
+    fecha_agregado DATETIME2,
+    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario),
+    FOREIGN KEY (id_articulo) REFERENCES articulo(id_articulo)
 );
 
-CREATE TABLE registro_actividades_usuario (
-    id_registro INT PRIMARY KEY IDENTITY(1,1),
-    id_usuario INT,
-    accion VARCHAR(255),
-    coordenadas VARCHAR(255),
-    fecha_hora DATETIME2,
-    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
-);
+
 
 CREATE TABLE articulo (
     id_articulo INT PRIMARY KEY IDENTITY(1,1),
@@ -67,15 +79,7 @@ CREATE TABLE articulo (
     espedition_date DATETIME2
 );
 
-CREATE TABLE favoritos (
-    id_favorito INT PRIMARY KEY IDENTITY(1,1),
-    id_usuario INT,
-    id_articulo INT,
-    [enable] BIT,
-    fecha_agregado DATETIME2,
-    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario),
-    FOREIGN KEY (id_articulo) REFERENCES articulo(id_articulo)
-);
+
 
 CREATE TABLE images_articulo (
     id_images_articulo INT IDENTITY(1,1)  PRIMARY KEY,
@@ -164,20 +168,29 @@ CREATE TABLE horarios_sucursal (
 );
 
 
-CREATE TABLE sucursal (
-    id_sucursal INT IDENTITY(1,1)  PRIMARY KEY,
-    direccion VARCHAR(255),
-    telefono VARCHAR(255),
-    nombre VARCHAR(255),
-    gerente VARCHAR(100),
-    contacto VARCHAR(255),
-    correo_electronico VARCHAR(255),
-    created DATETIME2,
-    lastUpdate DATETIME2,
-    url_logo VARCHAR(255),
-    coordenadas VARCHAR(255)
-);
 
+CREATE TABLE usuario_sucursal (
+    id_relacion INT IDENTITY(1,1)  PRIMARY KEY,
+    id_usuario INT,
+    id_sucursal INT,
+    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario),
+    FOREIGN KEY (id_sucursal) REFERENCES sucursal(id_sucursal)
+);
+CREATE TABLE usuario_distribuidor (
+    id_relacion INT IDENTITY(1,1)  PRIMARY KEY,
+    id_distribuidor INT,
+    id_usuario INT,
+    FOREIGN KEY (id_distribuidor) REFERENCES distribuidor(id_distribuidor),
+    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
+);
+CREATE TABLE registro_actividades_usuario (
+    id_registro INT PRIMARY KEY IDENTITY(1,1),
+    id_usuario INT,
+    accion VARCHAR(255),
+    coordenadas VARCHAR(255),
+    fecha_hora DATETIME2,
+    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
+);
 
 -- CREATE TABLE especificaciones_articulo (
 --     id_especificacion VARCHAR(255) PRIMARY KEY,
