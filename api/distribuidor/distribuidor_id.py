@@ -43,9 +43,12 @@ def process_distribuidor_por_id(connection, id_distribuidor):
                 horarios_distribuidor= {}
                 for horario in horarios_raw:
                     dia = horario['day']
+                    # print(horario['open'])
+                    # print(type(horario['open']))
                     horarios_distribuidor[dia] = {
                         # 'open': (horario['open']),
                         # 'close': (horario['close'])
+                        
                         'open': int(timedelta_to_milliseconds(horario['open'])),
                         'close': int(timedelta_to_milliseconds(horario['close']))
                     }
