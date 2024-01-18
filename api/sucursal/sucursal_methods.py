@@ -121,20 +121,21 @@ def actualizar_sucursal(id_sucursal):
             with connection.cursor() as cursor:
                 sql_update = "UPDATE sucursal SET "
                 valores = []
-
+                existee=False
                 for campo in campos_permitidos:
                     if campo in data and campo!='horarioAtencion':
                         valor = data[campo]
+                        existee=True
                         if campo in ['created', 'lastUpdate']:
                             valor = unix_to_datetime(valor)
                         sql_update += f"{campo} = ?, "
                         valores.append(valor)
-                
-                sql_update = sql_update.rstrip(', ')
-                sql_update += " WHERE id_sucursal = ?"
-                valores.append(id_sucursal)
-           
-                cursor.execute(sql_update, valores)
+                if existee:
+                    sql_update = sql_update.rstrip(', ')
+                    sql_update += " WHERE id_sucursal = ?"
+                    valores.append(id_sucursal)
+            
+                    cursor.execute(sql_update, valores)
 
                 # if 'horarioAtencion' in data:
                 #     for dia, horarios in data['horarioAtencion'].items():

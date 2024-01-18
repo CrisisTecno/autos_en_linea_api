@@ -184,34 +184,51 @@ def actualizar_distribuidor(id_distribuidor):
             data = request.json
             campos_permitidos = [
                 'gerente', 'logo_image', 'coordenadas', 'direccion',
-                'nombre', 'url_paginaWeb', 'telefono', 'email', 'horarioAtencion','lastUpdate','created'
+                'nombre', 'url_paginaWeb', 'telefono', 'email', 'horarioAtencion','marcas','lastUpdate','created'
             ]
 
             if not any(campo in data for campo in campos_permitidos):
                 return jsonify({"error": "Se requiere al menos un campo para actualizar"}), 400
-            print(data)
+            
             with connection.cursor() as cursor:
                 sql_update = "UPDATE distribuidor SET "
                 valores = []
-
+                existee=False
                 for campo in campos_permitidos:
-                    if campo in data and campo!='horarioAtencion':
+                    if campo in data and campo!='horarioAtencion' and campo!='marcas':
                         valor = data[campo]
+                        existee=True
                         if campo in ['created', 'lastUpdate']:
                             valor = unix_to_datetime(valor)
                         sql_update += f"{campo} = ?, "
                         valores.append(valor)
 
+                if existee:
+                    sql_update = sql_update.rstrip(', ')
+                    sql_update += " WHERE id_distribuidor = ?"
+                    valores.append(id_distribuidor)
+                    cursor.execute(sql_update, valores)
 
-                sql_update = sql_update.rstrip(', ')
-                sql_update += " WHERE id_distribuidor = ?"
-                valores.append(id_distribuidor)
-                cursor.execute(sql_update, valores)
+                if 'marcas' in data:
+                    print("osea sin entro we")
+                    sql = "SELECT COUNT(*) as conteo FROM marcas_distribuidor WHERE id_distribuidor = ?;"
+                    cursor.execute(sql, (id_distribuidor,))
+                    result = resultados_a_json(cursor, unico_resultado=True)
+                    
+                    existe = result['conteo'] > 0
+                    if existe:
+
+                        sql_delete_relaciones_marcas = "DELETE FROM marcas_distribuidor WHERE id_distribuidor = ?;"
+                        cursor.execute(sql_delete_relaciones_marcas, (id_distribuidor,))
+                    
+                    for marca in data['marcas']:
+                        sql_marca_distribuidor = """INSERT INTO marcas_distribuidor (marca, id_distribuidor)
+                                                    VALUES (?, ?);"""
+                        cursor.execute(sql_marca_distribuidor, (marca, id_distribuidor))
+
                 if 'horarioAtencion' in data:
                     for dia, horarios in data['horarioAtencion'].items():
-                        print(dia)
-                        print(horarios)
-                        print(horarios['open'])
+                        
                         open_time = convert_milliseconds_to_time_string(horarios['open'])
                         close_time = convert_milliseconds_to_time_string(horarios['close'])
                         sql_update_horarios = """UPDATE horarios_distribuidor

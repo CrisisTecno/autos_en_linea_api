@@ -263,7 +263,7 @@ def buscar_articulos_fav():
             parametros.extend([float(p) for p in preciomax])
 
         if latitud_usuario and longitud_usuario and radio: 
-            with connect_to_database() as connection:
+            with connect_to_database() as connection: 
                 with connection.cursor() as cursor:       
            
                     sql_sucursal = """SELECT * FROM sucursal;"""
