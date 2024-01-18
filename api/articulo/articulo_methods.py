@@ -170,6 +170,192 @@ def options_filter():
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
    
 #FALTA DOCUMENTAR
+@articulo_fl2.route('/filtersfav', methods=['GET'])
+def buscar_articulos_fav():
+    try:
+        anos = request.args.getlist('ano')  
+        categorias = request.args.getlist('categoria')
+        marcas = request.args.getlist('marca')
+        modelos = request.args.getlist('modelo')
+        colores = request.args.getlist('color')
+        preciomin = request.args.getlist('pricemin')
+        preciomax = request.args.getlist('pricemax')
+        latitud_usuario = request.args.get('latitud')
+        longitud_usuario = request.args.get('longitud')
+        radio = request.args.get('radio')
+        distribuidor_id = request.args.get('distribuidor_id')
+        sucursal_id = request.args.get('sucursal_id')
+        usuario_id = request.args.get('usuario_id')
+
+        consulta = """
+    SELECT 
+        articulo.*, 
+        sucursal.direccion, 
+        sucursal.coordenadas,
+        e.id_especificacion, 
+        e.tipo, 
+        img.url_image, 
+        img.descripcion as img_descripcion,
+        CAST(CASE WHEN fav.id_articulo IS NOT NULL THEN 1 ELSE 0 END AS INT) as favorite
+    FROM 
+        articulo
+    LEFT JOIN 
+        especificaciones e ON articulo.id_articulo = e.id_articulo
+    LEFT JOIN 
+        images_articulo img ON articulo.id_articulo = img.id_articulo
+    JOIN 
+        articulo_sucursal ON articulo.id_articulo = articulo_sucursal.id_articulo
+    LEFT JOIN 
+        (SELECT id_articulo FROM favoritos WHERE id_usuario = ? AND enable = 1) as fav
+    ON 
+        articulo.id_articulo = fav.id_articulo
+    LEFT JOIN 
+        favoritos ON articulo.id_articulo = favoritos.id_articulo
+    JOIN 
+        sucursal ON articulo_sucursal.id_sucursal = sucursal.id_sucursal
+    JOIN 
+        distribuidor_sucursal ON sucursal.id_sucursal = distribuidor_sucursal.id_sucursal
+"""
+
+        parametros = [usuario_id]
+
+
+        # sql="""
+        #             SELECT 
+        #                 articulo.*, 
+                        
+        #             FROM 
+        #                 articulo
+        #             JOIN 
+        #                 favoritos ON articulo.id_articulo = favoritos.id_articulo
+        #             WHERE 
+        #                 favoritos.enable = 1 AND favoritos.id_usuario = ? 
+        #             ORDER BY 
+        #                 articulo.id_articulo
+        #         """
+        if distribuidor_id:
+            consulta += " AND distribuidor_sucursal.id_distribuidor = ?"
+            parametros.append(int(distribuidor_id))
+
+        if sucursal_id:
+            consulta += " AND sucursal.id_sucursal = ?"
+            parametros.append(int(sucursal_id))
+        if anos:
+            consulta += f" AND ano IN ({','.join(['?'] * len(anos))})"
+            parametros.extend(anos)
+        if categorias:
+            consulta += f" AND categoria IN ({','.join(['?'] * len(categorias))})"
+            parametros.extend(categorias)
+        if marcas:
+            consulta += f" AND marca IN ({','.join(['?'] * len(marcas))})"
+            parametros.extend(marcas)
+        if modelos:
+            consulta += f" AND modelo IN ({','.join(['?'] * len(modelos))})"
+            parametros.extend(modelos)
+        if colores:
+            consulta += f" AND color IN ({','.join(['?'] * len(colores))})"
+            parametros.extend(colores)
+        if preciomin:
+            consulta += " AND precio >= ?"
+            parametros.extend([float(p) for p in preciomin])
+        if preciomax:
+            consulta += " AND precio <= ?"
+            parametros.extend([float(p) for p in preciomax])
+
+        if latitud_usuario and longitud_usuario and radio: 
+            with connect_to_database() as connection:
+                with connection.cursor() as cursor:       
+           
+                    sql_sucursal = """SELECT * FROM sucursal;"""
+                    cursor.execute(sql_sucursal)
+                    sucursal_results = resultados_a_json(cursor)
+                    sucursales_cercanas=obtener_sucursales_cercanas(latitud_usuario,longitud_usuario,radio,sucursal_results)
+                    ids_sucursales_cercanas = [sucursal["id_sucursal"] for sucursal in sucursales_cercanas]
+
+                    if sucursales_cercanas!=[]:
+                        consulta += f" AND articulo_sucursal.id_sucursal IN ({','.join(['?'] * len(ids_sucursales_cercanas))})"
+                        parametros.extend(ids_sucursales_cercanas)
+
+
+        with connect_to_database() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(consulta, parametros)
+                raw_results = resultados_a_json(cursor)
+        
+                articulo_results = {}
+                processed_especificaciones = set()
+                for row in raw_results:
+                    id_articulo = row['id_articulo']
+                    # print(id_articulo)
+                    id_especificacion = row.get('id_especificacion')
+                    if id_articulo not in articulo_results:
+                        articulo_results[id_articulo] = {
+                            'id_articulo': id_articulo,
+                            'marca': row['marca'],
+                            'favorite': row['favorite'],
+                            'modelo': row['modelo'],
+                            'categoria': row['categoria'],
+                            'ano': row['ano'],
+                            'precio': row['precio'],
+                            'kilometraje': row['kilometraje'],
+                            'created': row['created'],
+                            'lastUpdate': row['lastUpdate'],
+                            'lastInventoryUpdate': row['lastInventoryUpdate'],
+                            'enable': row['enable'],
+                            'descripcion': row['descripcion'],
+                            'enable': row['enable'],
+                            'color': row['color'],
+                            'mainImage': row['mainImage'],
+                            'especificaciones': [],
+                            'imagenes': []
+                        }
+
+                    if id_especificacion and id_especificacion not in processed_especificaciones:
+                        processed_especificaciones.add(id_especificacion)
+
+                        sql_subespecificaciones = """
+                            SELECT * FROM subespecificaciones
+                            WHERE id_especificacion = ?
+                        """
+                        cursor.execute(sql_subespecificaciones, (id_especificacion,))
+                        subespecificaciones_raw = resultados_a_json(cursor)
+
+                        subespecificaciones = {sub['clave']: sub['valor'] for sub in subespecificaciones_raw}
+                        especificacion = {
+                            'tipo': row['tipo'],
+                            'subespecificaciones': subespecificaciones
+                        }
+                        articulo_results[id_articulo]['especificaciones'].append(especificacion)
+
+                    url_image = row.get('url_image')
+                    descripcion = row.get('descripcion')
+                    if url_image and not any(img['url_image'] == url_image for img in articulo_results[id_articulo]['imagenes']):
+                        imagen = {
+                                'url_image': url_image,
+                                'descripcion': descripcion,
+                        }
+                        articulo_results[id_articulo]['imagenes'].append(imagen)
+
+                    sql_sucursales = """
+                                SELECT id_sucursal FROM articulo_sucursal
+                                WHERE id_articulo = ?
+                            """
+                    cursor.execute(sql_sucursales, (id_articulo,))
+                    sucursales = resultados_a_json(cursor)
+                    id_sucursales = sucursales[0]['id_sucursal']
+                    sql_sucursal="""
+                                SELECT direccion FROM sucursal WHERE id_sucursal =?
+                        """
+                    cursor.execute(sql_sucursal, (id_sucursales,))
+                    sucursal_dir=resultados_a_json(cursor,unico_resultado=True)
+                    articulo_results[id_articulo]['direccion'] = sucursal_dir['direccion']
+                    articulo_results[id_articulo]['id_sucursal'] = id_sucursales
+                 
+                return list(articulo_results.values())
+                
+    except Exception as e:
+        return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+    
 @articulo_fl2.route('/filters', methods=['GET'])
 def buscar_articulos():
     try:
@@ -178,12 +364,14 @@ def buscar_articulos():
         marcas = request.args.getlist('marca')
         modelos = request.args.getlist('modelo')
         colores = request.args.getlist('color')
-        precio = request.args.getlist('price')
+        preciomin = request.args.getlist('pricemin')
+        preciomax = request.args.getlist('pricemax')
         latitud_usuario = request.args.get('latitud')
         longitud_usuario = request.args.get('longitud')
         radio = request.args.get('radio')
         distribuidor_id = request.args.get('distribuidor_id')
         sucursal_id = request.args.get('sucursal_id')
+        usuario_id = request.args.get('usuario_id')
 
         # consulta = "SELECT articulo.*, sucursal.coordenadas FROM articulo " \
         #            "JOIN articulo_sucursal ON articulo.id_articulo = articulo_sucursal.id_articulo " \
@@ -202,6 +390,19 @@ def buscar_articulos():
            "JOIN sucursal ON articulo_sucursal.id_sucursal = sucursal.id_sucursal " \
            "JOIN distribuidor_sucursal ON sucursal.id_sucursal = distribuidor_sucursal.id_sucursal " \
            "WHERE 1=1"
+        sql="""
+                    SELECT 
+                        articulo.*, 
+                        CAST(favoritos.enable AS INT) as favorite
+                    FROM 
+                        articulo
+                    JOIN 
+                        favoritos ON articulo.id_articulo = favoritos.id_articulo
+                    WHERE 
+                        favoritos.enable = 1 AND favoritos.id_usuario = ? 
+                    ORDER BY 
+                        articulo.id_articulo
+                """
         parametros = []
         if distribuidor_id:
             consulta += " AND distribuidor_sucursal.id_distribuidor = ?"
@@ -225,9 +426,12 @@ def buscar_articulos():
         if colores:
             consulta += f" AND color IN ({','.join(['?'] * len(colores))})"
             parametros.extend(colores)
-        if precio:
+        if preciomin:
             consulta += " AND precio <= ?"
-            parametros.extend([float(p) for p in precio])
+            parametros.extend([float(p) for p in preciomin])
+        if preciomax:
+            consulta += " AND precio >= ?"
+            parametros.extend([float(p) for p in preciomax])
 
         if latitud_usuario and longitud_usuario and radio: 
             with connect_to_database() as connection:
