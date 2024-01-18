@@ -314,7 +314,7 @@ def obtener_articulos_por_distribuidor(id_distribuidor):
         with connect_to_database() as connection:
             with connection.cursor() as cursor:
                 sql_query = """
-                    SELECT a.*
+                    SELECT a.*, asu.id_sucursal
                     FROM articulo a
                     JOIN articulo_sucursal asu ON a.id_articulo = asu.id_articulo
                     JOIN distribuidor_sucursal ds ON asu.id_sucursal = ds.id_sucursal
@@ -322,7 +322,7 @@ def obtener_articulos_por_distribuidor(id_distribuidor):
                 """
                 cursor.execute(sql_query, (id_distribuidor,))
                 articulos = resultados_a_json(cursor)
-
+            
                 articulos_procesados = []
                 for articulo_record in articulos:
                     articulo_procesado = procesar_articulo(cursor, articulo_record['id_articulo'])
@@ -335,10 +335,11 @@ def obtener_articulos_por_distribuidor(id_distribuidor):
 
 def procesar_articulo(cursor, id_articulo):
     sql_articulo = """
-        SELECT a.*,
+        SELECT a.*, asu.id_sucursal,
             e.id_especificacion, e.tipo,
             img.url_image, img.descripcion as img_descripcion
         FROM articulo a
+        JOIN articulo_sucursal asu ON a.id_articulo = asu.id_articulo
         LEFT JOIN especificaciones e ON a.id_articulo = e.id_articulo
         LEFT JOIN images_articulo img ON a.id_articulo = img.id_articulo
         WHERE a.id_articulo = ?
@@ -349,6 +350,7 @@ def procesar_articulo(cursor, id_articulo):
         return None
     articulo_resultado = {
         'id_articulo': resultados_crudos[0]['id_articulo'],
+        'id_sucursal': resultados_crudos[0]['id_sucursal'],
         'marca': resultados_crudos[0]['marca'],
         'modelo': resultados_crudos[0]['modelo'],
         'categoria': resultados_crudos[0]['categoria'],
