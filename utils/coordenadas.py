@@ -2,7 +2,7 @@ from math import radians, sin, cos, sqrt, atan2
 
 def obtener_sucursales_cercanas(latitud_usuario, longitud_usuario, radio, sucursales):
     sucursales_cercanas = []
-
+    distancias=[]
     # Radio de la Tierra en kilómetros
     radio_tierra = 6371.0
   
@@ -14,8 +14,8 @@ def obtener_sucursales_cercanas(latitud_usuario, longitud_usuario, radio, sucurs
         if ',' not in sucursal["coordenadas"]:
             continue
         # Obtener las coordenadas de la sucursal en la base de datos (en formato "latitud,longitud")
-        coordenadas_sucursal = sucursal["coordenadas"].split(',')
-        print(coordenadas_sucursal)
+        coordenadas_sucursal = sucursal["coordenadas"].replace(" ", "").split(',')
+        
         latitud_sucursal_rad = radians(float(coordenadas_sucursal[0]))
         longitud_sucursal_rad = radians(float(coordenadas_sucursal[1]))
         
@@ -28,9 +28,10 @@ def obtener_sucursales_cercanas(latitud_usuario, longitud_usuario, radio, sucurs
         a = sin(d_latitud / 2)**2 + cos(latitud_usuario_rad) * cos(latitud_sucursal_rad) * sin(d_longitud / 2)**2
         c = 2 * atan2(sqrt(a), sqrt(1 - a))
         distancia = radio_tierra * c
-        print(distancia)
+       
         # Verificar si la sucursal está dentro del radio especificado
         if distancia <= float(radio):
             sucursales_cercanas.append(sucursal)
-    
-    return sucursales_cercanas
+            distancias.append(distancia)
+      
+    return sucursales_cercanas,distancias

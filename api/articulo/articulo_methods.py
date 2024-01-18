@@ -218,7 +218,7 @@ def buscar_articulos_fav():
 """
 
         parametros = [usuario_id]
-
+        distancias=[]
 
         # sql="""
         #             SELECT 
@@ -269,9 +269,9 @@ def buscar_articulos_fav():
                     sql_sucursal = """SELECT * FROM sucursal;"""
                     cursor.execute(sql_sucursal)
                     sucursal_results = resultados_a_json(cursor)
-                    sucursales_cercanas=obtener_sucursales_cercanas(latitud_usuario,longitud_usuario,radio,sucursal_results)
+                    sucursales_cercanas, distancias_sucursal=obtener_sucursales_cercanas(latitud_usuario,longitud_usuario,radio,sucursal_results)
                     ids_sucursales_cercanas = [sucursal["id_sucursal"] for sucursal in sucursales_cercanas]
-
+                    
                     if sucursales_cercanas!=[]:
                         consulta += f" AND articulo_sucursal.id_sucursal IN ({','.join(['?'] * len(ids_sucursales_cercanas))})"
                         parametros.extend(ids_sucursales_cercanas)
@@ -350,7 +350,15 @@ def buscar_articulos_fav():
                     sucursal_dir=resultados_a_json(cursor,unico_resultado=True)
                     articulo_results[id_articulo]['direccion'] = sucursal_dir['direccion']
                     articulo_results[id_articulo]['id_sucursal'] = id_sucursales
-                 
+
+                distancias_sucursal = [round(distancia, 3) for distancia in distancias_sucursal]
+
+                for index, row in enumerate(articulo_results.values()):
+                    id_articulo = row['id_articulo']
+                    
+                    if distancias_sucursal:
+                        articulo_results[id_articulo]['distancia'] = distancias_sucursal[index]
+
                 return list(articulo_results.values())
                 
     except Exception as e:
@@ -440,9 +448,9 @@ def buscar_articulos():
                     sql_sucursal = """SELECT * FROM sucursal;"""
                     cursor.execute(sql_sucursal)
                     sucursal_results = resultados_a_json(cursor)
-                    sucursales_cercanas=obtener_sucursales_cercanas(latitud_usuario,longitud_usuario,radio,sucursal_results)
+                    sucursales_cercanas, distancias_sucursal=obtener_sucursales_cercanas(latitud_usuario,longitud_usuario,radio,sucursal_results)
                     ids_sucursales_cercanas = [sucursal["id_sucursal"] for sucursal in sucursales_cercanas]
-
+                    
                     if sucursales_cercanas!=[]:
                         consulta += f" AND articulo_sucursal.id_sucursal IN ({','.join(['?'] * len(ids_sucursales_cercanas))})"
                         parametros.extend(ids_sucursales_cercanas)
@@ -454,7 +462,10 @@ def buscar_articulos():
                 raw_results = resultados_a_json(cursor)
                 articulo_results = {}
                 processed_especificaciones = set()
-                for row in raw_results:
+              
+                for index, row in enumerate(raw_results):
+                   
+
                     id_articulo = row['id_articulo']
                     # print(id_articulo)
                     id_especificacion = row.get('id_especificacion')
@@ -478,6 +489,7 @@ def buscar_articulos():
                             'especificaciones': [],
                             'imagenes': []
                         }
+                    
 
                     if id_especificacion and id_especificacion not in processed_especificaciones:
                         processed_especificaciones.add(id_especificacion)
@@ -518,8 +530,12 @@ def buscar_articulos():
                     cursor.execute(sql_sucursal, (id_sucursales,))
                     sucursal_dir=resultados_a_json(cursor,unico_resultado=True)
                     articulo_results[id_articulo]['direccion'] = sucursal_dir['direccion']
-                    articulo_results[id_articulo]['id_sucursal'] = id_sucursales
-                 
+                    articulo_results[id_articulo]['id_sucursal'] = id_sucursales 
+
+               
+                
+
+               
                 return list(articulo_results.values())
                 
     except Exception as e:
