@@ -218,7 +218,7 @@ def buscar_articulos_fav():
 """
 
         parametros = [usuario_id]
-        distancias=[]
+        distancias_sucursal=[]
 
         # sql="""
         #             SELECT 
@@ -352,12 +352,13 @@ def buscar_articulos_fav():
                     articulo_results[id_articulo]['id_sucursal'] = id_sucursales
 
                 distancias_sucursal = [round(distancia, 3) for distancia in distancias_sucursal]
-
-                for index, row in enumerate(articulo_results.values()):
-                    id_articulo = row['id_articulo']
-                    
-                    if distancias_sucursal:
-                        articulo_results[id_articulo]['distancia'] = distancias_sucursal[index]
+                if latitud_usuario and longitud_usuario and radio:
+                    print("entro aca we") 
+                    for index, row in enumerate(articulo_results.values()):
+                        id_articulo = row['id_articulo']
+                        
+                        if distancias_sucursal:
+                            articulo_results[id_articulo]['distancia'] = distancias_sucursal[index]
 
                 return list(articulo_results.values())
                 
@@ -366,6 +367,7 @@ def buscar_articulos_fav():
     
 @articulo_fl2.route('/filters', methods=['GET'])
 def buscar_articulos():
+
     try:
         anos = request.args.getlist('ano')  
         categorias = request.args.getlist('categoria')
