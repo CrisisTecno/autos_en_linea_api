@@ -220,19 +220,6 @@ def buscar_articulos_fav():
         parametros = [usuario_id]
         distancias_sucursal=[]
 
-        # sql="""
-        #             SELECT 
-        #                 articulo.*, 
-                        
-        #             FROM 
-        #                 articulo
-        #             JOIN 
-        #                 favoritos ON articulo.id_articulo = favoritos.id_articulo
-        #             WHERE 
-        #                 favoritos.enable = 1 AND favoritos.id_usuario = ? 
-        #             ORDER BY 
-        #                 articulo.id_articulo
-        #         """
         if distribuidor_id:
             consulta += " AND distribuidor_sucursal.id_distribuidor = ?"
             parametros.append(int(distribuidor_id))
