@@ -23,7 +23,7 @@ def crear_articulo():
             campos_requeridos = ['ano', 'categoria', 'color', 
                                  'descripcion', 'enable', 'mainImage', 'marca', 
                                  'modelo','precio','created',
-                                 'lastUpdate','lastInventoryUpdate','kilometraje','sucursal_id']   
+                                 'lastUpdate','lastInventoryUpdate','kilometraje','sucursal_id','especificaciones','imagenes']   
             if not all(campo in data for campo in campos_requeridos):
                 return jsonify({"error": "Faltan campos requeridos"}), 400
                 
@@ -646,6 +646,8 @@ def actualizar_especificacion(id_especificacion):
     except Exception as e:
         return jsonify({"error": f"Error al actualizar la especificación: {e}"}), 500
    
+
+
 @articulo_fl2.route('/especificaciones/<int:id>', methods=['GET'])
 def get_especificacion_por_id(id):
     try:
@@ -690,16 +692,100 @@ def actualizar_articulo(id_articulo):
         with connect_to_database() as connection:
             data = request.json
             campos_permitidos = ['ano', 'categoria', 'color', 
-                                 'descripcion', 'enable', 'mainImage', 'marca', 'expedition_date',
-                                 'modelo', 'precio', 'lastInventoryUpdate', 'kilometraje']
+                                 'descripcion', 'enable','id_sucursal', 'mainImage', 'marca', 'expedition_date',
+                                 'modelo', 'precio', 'lastInventoryUpdate', 'kilometraje','imagenes','especificaciones']
             cambios = []
             valores = []
+            changes=True
             for campo in campos_permitidos:
                 if campo in data:
-                    cambios.append(f"{campo} = ?")
-                    valores.append(data[campo])
+                    # if campo == 'id_distribuidor':
+                       
+                    #     sql_update_relacion_distribuidor = "UPDATE usuario_distribuidor SET id_distribuidor = ? WHERE id_usuario = ?;"
+                    #     valores_relacion_dis = (data['id_distribuidor'], id_articulo)
+                        
+                    #     changes=False
+                    #     with connection.cursor() as cursor_relacion:
+                    #         cursor_relacion.execute(sql_update_relacion_distribuidor, valores_relacion_dis)
+                    #         connection.commit()
 
-            if not cambios:
+                    if campo == 'id_sucursal':
+
+                        changes=False
+                        sql_update_relacion_sucursal = "UPDATE articulo_sucursal SET id_sucursal = ? WHERE id_articulo = ?;"
+                        valores_relacion = (data['id_sucursal'], id_articulo)
+                        with connection.cursor() as cursor_relacion:
+                            cursor_relacion.execute(sql_update_relacion_sucursal, valores_relacion)
+                            connection.commit()
+                    elif campo == 'imagenes':
+
+                        changes=False
+                        for imagen in data['imagenes']:
+                            with connection.cursor() as cursor:
+                                if 'id_imagen' in imagen:
+                                    sql_update_imagen = """UPDATE images_articulo SET url_image = ?, descripcion = ? WHERE id_images_articulo = ? AND id_articulo = ?"""
+                                    cursor.execute(sql_update_imagen, (imagen['url_image'], imagen['descripcion'], imagen['id_imagen'], id_articulo))
+                                else:
+                                    sql_insert_imagen = """INSERT INTO images_articulo (url_image, descripcion, id_articulo) VALUES (?, ?, ?)"""
+                                    cursor.execute(sql_insert_imagen, (imagen['url_image'], imagen['descripcion'], id_articulo))
+
+                    elif campo == 'especificaciones':
+                        changes=False
+
+                        for especificacion in data['especificaciones']:
+                            with connection.cursor() as cursor:
+                                cursor.execute("SELECT id_especificacion FROM especificaciones WHERE id_articulo = ?", (id_articulo))
+                                
+                                result = resultados_a_json(cursor, unico_resultado=True)
+                                id_especificacion=result['id_especificacion']
+                                
+                                subespecificacionessc=especificacion['subespecificaciones']
+                               
+                                for subespecificacion in especificacion.get('subespecificaciones', []):
+                                    # print(subespecificacion_value)
+                                   
+                                    if 'id_subespecificacion' in subespecificacion:
+                                        # Actualizar subespecificación existente
+                                        sql_update_subespecificacion = """UPDATE subespecificaciones SET clave = ?, valor = ? WHERE id_subespecificacion = ? AND id_especificacion = ?"""
+                                        cursor.execute(sql_update_subespecificacion, (subespecificacion['clave'], subespecificacion['valor'], subespecificacion['id_subespecificacion'], id_especificacion))
+                                    else:
+                                        # Insertar nueva subespecificación
+                                        sql_insert_subespecificacion = """INSERT INTO subespecificaciones (clave, valor, id_especificacion) VALUES (?, ?, ?)"""
+                                        cursor.execute(sql_insert_subespecificacion, (subespecificacion, str(subespecificacionessc[subespecificacion]), id_especificacion))
+                            # if 'id_especificacion' in especificacion:
+                            #     # Actualizar especificación existente
+                            #     sql_update_especificacion = """UPDATE especificaciones SET tipo = ? WHERE id_especificacion = ? AND id_articulo = ?"""
+                            #     cursor.execute(sql_update_especificacion, (especificacion['tipo'], especificacion['id_especificacion'], id_articulo))
+                            # else:
+                            #     # Insertar nueva especificación
+                            #     sql_insert_especificacion = """INSERT INTO especificaciones (tipo, id_articulo) VALUES (?, ?)"""
+                            #     cursor.execute(sql_insert_especificacion, (especificacion['tipo'], id_articulo))
+                            #     id_especificacion = cursor.lastrowid
+
+                            # for subespecificacion in especificacion.get('subespecificaciones', []):
+                            #     if 'id_subespecificacion' in subespecificacion:
+                            #         # Actualizar subespecificación existente
+                            #         sql_update_subespecificacion = """UPDATE subespecificaciones SET clave = ?, valor = ? WHERE id_subespecificacion = ? AND id_especificacion = ?"""
+                            #         cursor.execute(sql_update_subespecificacion, (subespecificacion['clave'], subespecificacion['valor'], subespecificacion['id_subespecificacion'], id_especificacion))
+                            #     else:
+                            #         # Insertar nueva subespecificación
+                            #         sql_insert_subespecificacion = """INSERT INTO subespecificaciones (clave, valor, id_especificacion) VALUES (?, ?, ?)"""
+                            #         cursor.execute(sql_insert_subespecificacion, (subespecificacion['clave'], subespecificacion['valor'], id_especificacion))
+                    
+                            # for clave, valor in especificacion['subespecificaciones'].items():
+                            #     Aquí, asumo que no tienes IDs para subespecificaciones individuales,
+                            #     por lo que siempre las insertarás como nuevas.
+                            #     Necesitarías ajustar esto si también necesitas actualizarlas.
+                            #     sql_insert_subespecificaciones = """INSERT INTO subespecificaciones (clave, valor, id_especificacion) VALUES (?, ?, ?)"""
+                            #     cursor.execute(sql_insert_subespecificaciones, (clave, valor, id_especificacion))
+
+                    else:
+                        cambios.append(f"{campo} = ?")
+                        valores.append(data[campo])
+
+                
+
+            if not cambios and changes:
                 return jsonify({"error": "No se proporcionaron datos para actualizar"}), 400
 
             # Agregar actualización de lastUpdate
@@ -742,15 +828,7 @@ def actualizar_articulo(id_articulo):
                 #             cursor.execute(sql_insert_subespecificaciones, (clave, valor, id_especificacion))
 
 
-                # if 'imagenes' in data:
-                #     for imagen in data['imagenes']:
-                #         if 'id_imagen' in imagen:
-                #             sql_update_imagen = """UPDATE images_articulo SET url_image = ?, descripcion = ? WHERE id_images_articulo = ? AND id_articulo = ?"""
-                #             cursor.execute(sql_update_imagen, (imagen['url_image'], imagen['descripcion'], imagen['id_imagen'], id_articulo))
-                #         else:
-                #             sql_insert_imagen = """INSERT INTO images_articulo (url_image, descripcion, id_articulo) VALUES (?, ?, ?)"""
-                #             cursor.execute(sql_insert_imagen, (imagen['url_image'], imagen['descripcion'], id_articulo))
-
+                
                 connection.commit()
 
             return jsonify({"success": True, "message": f"Artículo con ID {id_articulo} actualizado exitosamente"}), 200
