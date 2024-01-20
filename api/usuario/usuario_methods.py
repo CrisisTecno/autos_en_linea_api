@@ -66,26 +66,33 @@ def actualizar_usuario(id_usuario):
                                  'id_sucursal', 'id_distribuidor', 'id_usuario_firebase']
             cambios = []
             valores = []
-
+            changes=True
             for campo in campos_permitidos:
                 if campo in data:
-                    if campo in ['id_distribuidor']:
-                        sql_update_relacion = f"UPDATE usuario_distribuidor SET {campo} = ? WHERE id_usuario = ?"
-                        valores_relacion = (data[campo], id_usuario)
+                    if campo == 'id_distribuidor':
+                       
+                        sql_update_relacion_distribuidor = "UPDATE usuario_distribuidor SET id_distribuidor = ? WHERE id_usuario = ?;"
+                        valores_relacion_dis = (data['id_distribuidor'], id_usuario)
+                        
+                        changes=False
                         with connection.cursor() as cursor_relacion:
-                            cursor_relacion.execute(sql_update_relacion, valores_relacion)
+                            cursor_relacion.execute(sql_update_relacion_distribuidor, valores_relacion_dis)
                             connection.commit()
-                    if campo in ['id_sucursal']:
-                        sql_update_relacion = f"UPDATE usuario_sucursal SET {campo} = ? WHERE id_usuario = ?"
-                        valores_relacion = (data[campo], id_usuario)
+
+                    elif campo == 'id_sucursal':
+
+                        
+                        changes=False
+                        sql_update_relacion_sucursal = "UPDATE usuario_sucursal SET id_sucursal = ? WHERE id_usuario = ?;"
+                        valores_relacion = (data['id_sucursal'], id_usuario)
                         with connection.cursor() as cursor_relacion:
-                            cursor_relacion.execute(sql_update_relacion, valores_relacion)
+                            cursor_relacion.execute(sql_update_relacion_sucursal, valores_relacion)
                             connection.commit()
                     else:
                         cambios.append(f"{campo} = ?")
                         valores.append(data[campo])
 
-            if not cambios:
+            if not cambios and changes:
                 return jsonify({"error": "No se proporcionaron datos para actualizar"}), 400
 
             cambios.append("lastUpdate = CURRENT_TIMESTAMP")
