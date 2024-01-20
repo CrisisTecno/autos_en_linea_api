@@ -89,13 +89,29 @@ def get_articulos(connection):
                 sucursales = resultados_a_json(cursor)
                 
                 id_sucursales = sucursales[0]['id_sucursal']
+
+                sql_distribuidor = """
+                    SELECT id_distribuidor
+                    FROM distribuidor_sucursal
+                    WHERE id_sucursal = ?
+                """
+                cursor.execute(sql_distribuidor, (id_sucursales,))
+                resultados_distribuidor = resultados_a_json(cursor)
+
+                if resultados_distribuidor:
+                    id_distribuidor = resultados_distribuidor[0]['id_distribuidor']
+                else:
+                    id_distribuidor = 0
+
                 sql_sucursal="""
                             SELECT direccion FROM sucursal WHERE id_sucursal =?
                     """
                 cursor.execute(sql_sucursal, (id_sucursales,))
                 sucursal_dir=resultados_a_json(cursor,unico_resultado=True)
+
                 articulo_results[id_articulo]['direccion'] = sucursal_dir['direccion']
                 articulo_results[id_articulo]['id_sucursal'] = id_sucursales
+                articulo_results[id_articulo]['id_distribuidor'] = id_distribuidor
                 
                     
             return list(articulo_results.values())

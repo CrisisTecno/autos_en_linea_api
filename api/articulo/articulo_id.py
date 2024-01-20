@@ -75,6 +75,19 @@ def get_articulo(connection, id_articulo):
                 cursor.execute(sql_sucursales, (id_articulo,))
                 sucursales = resultados_a_json(cursor)
                 id_sucursales = sucursales[0]['id_sucursal']
+                sql_distribuidor = """
+                    SELECT id_distribuidor
+                    FROM distribuidor_sucursal
+                    WHERE id_sucursal = ?
+                """
+                cursor.execute(sql_distribuidor, (id_sucursales,))
+                resultados_distribuidor = resultados_a_json(cursor)
+
+                if resultados_distribuidor:
+                    id_distribuidor = resultados_distribuidor[0]['id_distribuidor']
+                else:
+                    id_distribuidor = 0
+
                 sql_sucursal="""
                             SELECT direccion FROM sucursal WHERE id_sucursal =?
                     """
@@ -82,7 +95,8 @@ def get_articulo(connection, id_articulo):
                 sucursal_dir=resultados_a_json(cursor,unico_resultado=True)
                 articulo_resultado['direccion'] = sucursal_dir['direccion']
                 articulo_resultado['id_sucursal'] = id_sucursales
-                
+                articulo_resultado['id_distribuidor'] = id_distribuidor
+  
 
             return articulo_resultado
     except Exception as ex:
