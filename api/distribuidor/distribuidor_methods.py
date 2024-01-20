@@ -332,12 +332,144 @@ def obtener_articulos_por_distribuidor(id_distribuidor):
 
     except Exception as e:
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+    
+@distribuidor_fl2.route('/<int:id_distribuidor>/articulos/<int:id_usuario>', methods=['GET'])
+def obtener_articulos_por_distribuidor_favoritos(id_distribuidor,id_usuario):
+    try:
+        with connect_to_database() as connection:
+            with connection.cursor() as cursor:
+                sql_query = """
+                    SELECT a.*, asu.id_sucursal
+                    FROM articulo a
+                    JOIN articulo_sucursal asu ON a.id_articulo = asu.id_articulo
+                    JOIN distribuidor_sucursal ds ON asu.id_sucursal = ds.id_sucursal
+                    WHERE ds.id_distribuidor = ?;
+                """
+                cursor.execute(sql_query, (id_distribuidor,))
+                articulos = resultados_a_json(cursor)
+                print(articulos)
+                articulos_procesados = []
+                for articulo_record in articulos:
+                    articulo_procesado = procesar_articulo_fav(cursor, articulo_record['id_articulo'],id_usuario)
+                    articulos_procesados.append(articulo_procesado)
+
+                return jsonify({"success": True, "articulos": articulos_procesados}), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Error en la base de datos: {e}"}), 500
+
+def procesar_articulo_fav(cursor, id_articulo,id_usuario):
+#     sql_articulo = """
+#     SELECT 
+#         a.*, 
+#         asu.id_sucursal,
+#         e.id_especificacion, 
+#         e.tipo, 
+#         img.url_image, 
+#         img.descripcion as img_descripcion,
+#         CAST(CASE WHEN fav.id_articulo IS NOT NULL THEN 1 ELSE 0 END AS INT) as favorito
+#     FROM 
+#         articulo a
+#     JOIN 
+#         articulo_sucursal asu ON a.id_articulo = asu.id_articulo
+#     LEFT JOIN 
+#         especificaciones e ON a.id_articulo = e.id_articulo
+#     LEFT JOIN 
+#         images_articulo img ON a.id_articulo = img.id_articulo
+#     LEFT JOIN 
+#         (SELECT id_articulo FROM favoritos WHERE id_usuario = ? AND enable = 1) as fav
+#     ON 
+#         a.id_articulo = fav.id_articulo
+#     WHERE 
+#         a.id_articulo = ?
+# """
+    sql_articulo = """
+    SELECT 
+        a.*, 
+        asu.id_sucursal,
+        e.id_especificacion, 
+        e.tipo, 
+        img.url_image, 
+        img.descripcion as img_descripcion,
+        CAST(CASE WHEN fav.id_articulo IS NOT NULL THEN 1 ELSE 0 END AS INT) as favorito
+    FROM 
+        articulo a
+    JOIN 
+        articulo_sucursal asu ON a.id_articulo = asu.id_articulo
+    LEFT JOIN 
+        especificaciones e ON a.id_articulo = e.id_articulo
+    LEFT JOIN 
+        images_articulo img ON a.id_articulo = img.id_articulo
+    LEFT JOIN 
+        (SELECT id_articulo FROM favoritos WHERE id_usuario = ? AND enable = 1) as fav
+    ON 
+        a.id_articulo = fav.id_articulo
+    WHERE 
+        a.id_articulo = ?
+"""
+
+# Luego ejecutas la consulta pasando los parámetros necesarios
+    cursor.execute(sql_articulo, (id_usuario, id_articulo))
+
+    resultados_crudos = resultados_a_json(cursor)
+    print(resultados_crudos)
+    if not resultados_crudos:
+        return None
+    articulo_resultado = {
+        'id_articulo': resultados_crudos[0]['id_articulo'],
+        'favorito': resultados_crudos[0]['favorito'],
+        'id_sucursal': resultados_crudos[0]['id_sucursal'],
+        'marca': resultados_crudos[0]['marca'],
+        'modelo': resultados_crudos[0]['modelo'],
+        'categoria': resultados_crudos[0]['categoria'],
+        'ano': resultados_crudos[0]['ano'],
+        'precio': resultados_crudos[0]['precio'],
+        'kilometraje': resultados_crudos[0]['kilometraje'],
+        'created': resultados_crudos[0]['created'],
+        'lastUpdate': resultados_crudos[0]['lastUpdate'],
+        'lastInventoryUpdate': resultados_crudos[0]['lastInventoryUpdate'],
+        'enable': resultados_crudos[0]['enable'],
+        'descripcion': resultados_crudos[0]['descripcion'],
+        'color': resultados_crudos[0]['color'],
+        'mainImage': resultados_crudos[0]['mainImage'],
+        'especificaciones': [],
+        'imagenes': []
+    }
+
+    ids_especificaciones_procesadas = set()
+    for fila in resultados_crudos:
+        id_especificacion = fila.get('id_especificacion')
+        if id_especificacion and id_especificacion not in ids_especificaciones_procesadas:
+            ids_especificaciones_procesadas.add(id_especificacion)
+            sql_subespecificaciones = """
+                SELECT * FROM subespecificaciones
+                WHERE id_especificacion = ?
+            """
+            cursor.execute(sql_subespecificaciones, (id_especificacion,))
+            subespecificaciones_raw = resultados_a_json(cursor)
+            subespecificaciones = {sub['clave']: sub['valor'] for sub in subespecificaciones_raw}
+
+            especificacion = {
+                'tipo': fila['tipo'],
+                'subespecificaciones': subespecificaciones
+            }
+            articulo_resultado['especificaciones'].append(especificacion)
+
+        if fila['url_image'] and not any(imagen['url_image'] == fila['url_image'] for imagen in articulo_resultado['imagenes']):
+            imagen = {
+                'url_image': fila['url_image'],
+                'descripcion': fila['img_descripcion'],
+            }
+            articulo_resultado['imagenes'].append(imagen)
+
+    return articulo_resultado
 
 def procesar_articulo(cursor, id_articulo):
     sql_articulo = """
         SELECT a.*, asu.id_sucursal,
             e.id_especificacion, e.tipo,
             img.url_image, img.descripcion as img_descripcion
+            
         FROM articulo a
         JOIN articulo_sucursal asu ON a.id_articulo = asu.id_articulo
         LEFT JOIN especificaciones e ON a.id_articulo = e.id_articulo
