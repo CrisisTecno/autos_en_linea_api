@@ -417,7 +417,7 @@ def procesar_articulo_fav(cursor, id_articulo,id_usuario):
         return None
     articulo_resultado = {
         'id_articulo': resultados_crudos[0]['id_articulo'],
-        'favorito': resultados_crudos[0]['favorito'],
+        'favorite': resultados_crudos[0]['favorito'],
         'id_sucursal': resultados_crudos[0]['id_sucursal'],
         'marca': resultados_crudos[0]['marca'],
         'modelo': resultados_crudos[0]['modelo'],
