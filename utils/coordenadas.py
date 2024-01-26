@@ -33,5 +33,5 @@ def obtener_sucursales_cercanas(latitud_usuario, longitud_usuario, radio, sucurs
         if distancia <= float(radio):
             sucursales_cercanas.append(sucursal)
             distancias.append(distancia)
-      
+
     return sucursales_cercanas,distancias

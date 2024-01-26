@@ -268,12 +268,12 @@ def buscar_articulos_fav():
             with connection.cursor() as cursor:
                 cursor.execute(consulta, parametros)
                 raw_results = resultados_a_json(cursor)
-        
+                
                 articulo_results = {}
                 processed_especificaciones = set()
                 for row in raw_results:
                     id_articulo = row['id_articulo']
-                    # print(id_articulo)
+                    print(id_articulo)
                     id_especificacion = row.get('id_especificacion')
                     if id_articulo not in articulo_results:
                         articulo_results[id_articulo] = {
@@ -354,13 +354,20 @@ def buscar_articulos_fav():
                     articulo_results[id_articulo]['id_distribuidor'] = id_distribuidor
 
                 distancias_sucursal = [round(distancia, 3) for distancia in distancias_sucursal]
+                print(processed_especificaciones)
                 if latitud_usuario and longitud_usuario and radio:
-                    print("entro aca we") 
-                    for index, row in enumerate(articulo_results.values()):
-                        id_articulo = row['id_articulo']
+                    sucursal_distancia_map = {suc['id_sucursal']: dist for suc, dist in zip(sucursales_cercanas, distancias_sucursal)}
+
+                    for articulo in articulo_results.values():
+                        id_sucursal_articulo = articulo['id_sucursal']
+                        # Asignar la distancia si la sucursal del artículo está en las sucursales cercanas
+                        if id_sucursal_articulo in sucursal_distancia_map:
+                            articulo['distancia'] = sucursal_distancia_map[id_sucursal_articulo]
+
+                        # id_articulo = row['id_articulo']
                         
-                        if distancias_sucursal:
-                            articulo_results[id_articulo]['distancia'] = distancias_sucursal[index]
+                        # if distancias_sucursal:
+                        #     articulo_results[id_articulo]['distancia'] = distancias_sucursal[index]
 
                 return list(articulo_results.values())
                 
