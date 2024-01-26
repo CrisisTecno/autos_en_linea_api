@@ -359,30 +359,7 @@ def obtener_articulos_por_distribuidor_favoritos(id_distribuidor,id_usuario):
         return jsonify({"error": f"Error en la base de datos: {e}"}), 500
 
 def procesar_articulo_fav(cursor, id_articulo,id_usuario):
-#     sql_articulo = """
-#     SELECT 
-#         a.*, 
-#         asu.id_sucursal,
-#         e.id_especificacion, 
-#         e.tipo, 
-#         img.url_image, 
-#         img.descripcion as img_descripcion,
-#         CAST(CASE WHEN fav.id_articulo IS NOT NULL THEN 1 ELSE 0 END AS INT) as favorito
-#     FROM 
-#         articulo a
-#     JOIN 
-#         articulo_sucursal asu ON a.id_articulo = asu.id_articulo
-#     LEFT JOIN 
-#         especificaciones e ON a.id_articulo = e.id_articulo
-#     LEFT JOIN 
-#         images_articulo img ON a.id_articulo = img.id_articulo
-#     LEFT JOIN 
-#         (SELECT id_articulo FROM favoritos WHERE id_usuario = ? AND enable = 1) as fav
-#     ON 
-#         a.id_articulo = fav.id_articulo
-#     WHERE 
-#         a.id_articulo = ?
-# """
+
     sql_articulo = """
     SELECT 
         a.*, 
@@ -412,7 +389,7 @@ def procesar_articulo_fav(cursor, id_articulo,id_usuario):
     cursor.execute(sql_articulo, (id_usuario, id_articulo))
 
     resultados_crudos = resultados_a_json(cursor)
-    print(resultados_crudos)
+    
     if not resultados_crudos:
         return None
     articulo_resultado = {
@@ -461,7 +438,12 @@ def procesar_articulo_fav(cursor, id_articulo,id_usuario):
                 'descripcion': fila['img_descripcion'],
             }
             articulo_resultado['imagenes'].append(imagen)
-
+        sql_sucursal="""
+                                SELECT direccion FROM sucursal WHERE id_sucursal =?
+                        """
+        cursor.execute(sql_sucursal, (resultados_crudos[0]['id_sucursal']))
+        sucursal_dir=resultados_a_json(cursor,unico_resultado=True)
+        articulo_resultado['direccion'] = sucursal_dir['direccion']
     return articulo_resultado
 
 def procesar_articulo(cursor, id_articulo):
