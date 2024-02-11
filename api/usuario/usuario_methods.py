@@ -71,13 +71,35 @@ def actualizar_usuario(id_usuario):
                 if campo in data:
                     if campo == 'id_distribuidor':
                        
-                        sql_update_relacion_distribuidor = "UPDATE usuario_distribuidor SET id_distribuidor = ? WHERE id_usuario = ?;"
-                        valores_relacion_dis = (data['id_distribuidor'], id_usuario)
-                        
-                        changes=False
-                        with connection.cursor() as cursor_relacion:
-                            cursor_relacion.execute(sql_update_relacion_distribuidor, valores_relacion_dis)
+                        with connection.cursor() as cursor:
+                            # Verificar si ya existe una relación para este usuario
+                            cursor.execute("SELECT COUNT(*) as conteo FROM usuario_distribuidor WHERE id_usuario = ?", (id_usuario,))
+                            result = resultados_a_json(cursor, unico_resultado=True)
+                            existe = result['conteo'] > 0
+                            if existe > 0:
+                                # Actualizar la relación existente
+                                sql_update_relacion_distribuidor = """
+                                    UPDATE usuario_distribuidor SET id_distribuidor = ?
+                                    WHERE id_usuario = ?;
+                                """
+                                valores_relacion_dis = (data['id_distribuidor'], id_usuario)
+                                cursor_relacion.execute(sql_update_relacion_distribuidor, valores_relacion_dis)
+                            else:
+                                # Insertar nueva relación si no existe
+                                sql_insert_relacion_distribuidor = """
+                                    INSERT INTO usuario_distribuidor (id_distribuidor, id_usuario)
+                                    VALUES (?, ?);
+                                """
+                                valores_relacion_dis = (data['id_distribuidor'], id_usuario)
+                                cursor_relacion.execute(sql_insert_relacion_distribuidor, valores_relacion_dis)
                             connection.commit()
+                        # sql_update_relacion_distribuidor = "UPDATE usuario_distribuidor SET id_distribuidor = ? WHERE id_usuario = ?;"
+                        # valores_relacion_dis = (data['id_distribuidor'], id_usuario)
+                        
+                        # changes=False
+                        # with connection.cursor() as cursor_relacion:
+                        #     cursor_relacion.execute(sql_update_relacion_distribuidor, valores_relacion_dis)
+                        #     connection.commit()
 
                     elif campo == 'id_sucursal':
 
