@@ -70,12 +70,10 @@ def actualizar_usuario(id_usuario):
             for campo in campos_permitidos:
                 if campo in data:
                     if campo == 'id_distribuidor':
-                       
                         with connection.cursor() as cursor:
                             # Verificar si ya existe una relación para este usuario
                             cursor.execute("SELECT COUNT(*) as conteo FROM usuario_distribuidor WHERE id_usuario = ?", (id_usuario,))
                             result = resultados_a_json(cursor, unico_resultado=True)
-                            print(result)
                             existe = result['conteo'] > 0
                             if existe > 0:
                                 # Actualizar la relación existente
@@ -97,23 +95,44 @@ def actualizar_usuario(id_usuario):
                         # sql_update_relacion_distribuidor = "UPDATE usuario_distribuidor SET id_distribuidor = ? WHERE id_usuario = ?;"
                         # valores_relacion_dis = (data['id_distribuidor'], id_usuario)
                         
-                        # changes=False
+                        changes=False
                         # with connection.cursor() as cursor_relacion:
                         #     cursor_relacion.execute(sql_update_relacion_distribuidor, valores_relacion_dis)
                         #     connection.commit()
 
                     elif campo == 'id_sucursal':
-
-                        
+                        with connection.cursor() as cursor:
+                            # Verificar si ya existe una relación para este usuario
+                            cursor.execute("SELECT COUNT(*) as conteo FROM usuario_sucursal WHERE id_usuario = ?", (id_usuario,))
+                            result = resultados_a_json(cursor, unico_resultado=True)
+                            existe = result['conteo'] > 0
+                            if existe > 0:
+                                # Actualizar la relación existente
+                                sql_update_relacion_sucursal = """
+                                    UPDATE usuario_sucursal SET id_sucursal = ?
+                                    WHERE id_usuario = ?;
+                                """
+                                valores_relacion_dis = (data['id_sucursal'], id_usuario)
+                                cursor.execute(sql_update_relacion_sucursal, valores_relacion_dis)
+                            else:
+                                # Insertar nueva relación si no existe
+                                sql_insert_relacion_sucursal = """
+                                    INSERT INTO usuario_sucursal (id_sucursal, id_usuario)
+                                    VALUES (?, ?);
+                                """
+                                valores_relacion_dis = (data['id_sucursal'], id_usuario)
+                                cursor.execute(sql_insert_relacion_sucursal, valores_relacion_dis)
+                            connection.commit()                       
                         changes=False
-                        sql_update_relacion_sucursal = "UPDATE usuario_sucursal SET id_sucursal = ? WHERE id_usuario = ?;"
-                        valores_relacion = (data['id_sucursal'], id_usuario)
-                        with connection.cursor() as cursor_relacion:
-                            cursor_relacion.execute(sql_update_relacion_sucursal, valores_relacion)
-                            connection.commit()
+                        # sql_update_relacion_sucursal = "UPDATE usuario_sucursal SET id_sucursal = ? WHERE id_usuario = ?;"
+                        # valores_relacion = (data['id_sucursal'], id_usuario)
+                        # with connection.cursor() as cursor_relacion:
+                        #     cursor_relacion.execute(sql_update_relacion_sucursal, valores_relacion)
+                        #     connection.commit()
                     else:
                         cambios.append(f"{campo} = ?")
                         valores.append(data[campo])
+                    
 
             if not cambios and changes:
                 return jsonify({"error": "No se proporcionaron datos para actualizar"}), 400
