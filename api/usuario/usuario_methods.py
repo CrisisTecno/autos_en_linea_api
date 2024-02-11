@@ -75,6 +75,7 @@ def actualizar_usuario(id_usuario):
                             # Verificar si ya existe una relación para este usuario
                             cursor.execute("SELECT COUNT(*) as conteo FROM usuario_distribuidor WHERE id_usuario = ?", (id_usuario,))
                             result = resultados_a_json(cursor, unico_resultado=True)
+                            print(result)
                             existe = result['conteo'] > 0
                             if existe > 0:
                                 # Actualizar la relación existente
