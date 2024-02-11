@@ -84,7 +84,7 @@ def actualizar_usuario(id_usuario):
                                     WHERE id_usuario = ?;
                                 """
                                 valores_relacion_dis = (data['id_distribuidor'], id_usuario)
-                                cursor_relacion.execute(sql_update_relacion_distribuidor, valores_relacion_dis)
+                                cursor.execute(sql_update_relacion_distribuidor, valores_relacion_dis)
                             else:
                                 # Insertar nueva relación si no existe
                                 sql_insert_relacion_distribuidor = """
@@ -92,7 +92,7 @@ def actualizar_usuario(id_usuario):
                                     VALUES (?, ?);
                                 """
                                 valores_relacion_dis = (data['id_distribuidor'], id_usuario)
-                                cursor_relacion.execute(sql_insert_relacion_distribuidor, valores_relacion_dis)
+                                cursor.execute(sql_insert_relacion_distribuidor, valores_relacion_dis)
                             connection.commit()
                         # sql_update_relacion_distribuidor = "UPDATE usuario_distribuidor SET id_distribuidor = ? WHERE id_usuario = ?;"
                         # valores_relacion_dis = (data['id_distribuidor'], id_usuario)
