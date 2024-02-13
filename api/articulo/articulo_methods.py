@@ -787,8 +787,13 @@ def actualizar_articulo(id_articulo):
                             #     cursor.execute(sql_insert_subespecificaciones, (clave, valor, id_especificacion))
 
                     else:
-                        cambios.append(f"{campo} = ?")
-                        valores.append(data[campo])
+                        if campo == 'lastInventoryUpdate':
+                            valor = unix_to_datetime(data['lastInventoryUpdate'])
+                            cambios.append(f"{campo} = ?")
+                            valores.append(valor) 
+                        else:
+                            cambios.append(f"{campo} = ?")
+                            valores.append(data[campo])
 
                 
 
