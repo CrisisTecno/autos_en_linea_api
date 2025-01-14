@@ -7,6 +7,9 @@ from .images_articulo.images_articulo import articulo_fl3
 from utils.serializer import resultados_a_json, convertir_a_datetime
 
 
+
+
+
 articulo_fl = Blueprint('articulo', __name__)
 
 articulo_fl.register_blueprint(articulo_fl1,)
