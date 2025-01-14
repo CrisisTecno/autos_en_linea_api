@@ -41,15 +41,12 @@ La aplicación expone una serie de endpoints para interactuar con las diferentes
 
 Para una descripción completa de todos los endpoints y sus parámetros, consulte la documentación de la API.
 
-## Generación de Documentación en PDF
 
-Para facilitar el acceso a la documentación de las APIs, puede generar un archivo PDF que compile toda la información necesaria. A continuación, se proporciona un botón que, al hacer clic, descargará la guía de las APIs en formato PDF.
+## Guía de las APIs
 
-```html
-<a href="https://github.com/CrisisTecno/autos_en_linea_api/data/endpoints-ael-.pdf" download="api_guide.pdf">
-   <button>Descargar Guía de las APIs en PDF</button>
-</a>
-```
+Puedes descargar la guía completa de las APIs en formato PDF haciendo clic en el siguiente enlace:
+
+[![Descargar Guía de las APIs](https://img.shields.io/badge/Descargar%20Guía%20API-PDF-blue?style=for-the-badge)](https://github.com/CrisisTecno/autos_en_linea_api/data/endpoints-ael-.pdf)
 
 ## Uso de las Endpoints con Ejemplos
 ---
