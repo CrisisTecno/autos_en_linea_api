@@ -46,7 +46,7 @@ Para una descripción completa de todos los endpoints y sus parámetros, consult
 
 Puedes descargar la guía completa de las APIs en formato PDF haciendo clic en el siguiente enlace:
 
-[![Descargar Guía de las APIs](https://img.shields.io/badge/Descargar%20Guía%20API-PDF-blue?style=for-the-badge)](https://github.com/CrisisTecno/autos_en_linea_api/data/endpoints-ael-.pdf)
+[![Descargar Guía de las APIs](https://img.shields.io/badge/Descargar%20Guía%20API-PDF-blue?style=for-the-badge)](https://github.com/CrisisTecno/autos_en_linea_api/blob/main/data/endpoints-ael-.pdf)
 
 ## Uso de las Endpoints con Ejemplos
 ---
